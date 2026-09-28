@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Tresor Couture monogram">
+  <title>Tresor Couture</title>
+  <defs>
+    <linearGradient id="m-gold" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#EBD195"/>
+      <stop offset="35%" stop-color="#C9A35A"/>
+      <stop offset="70%" stop-color="#9A7028"/>
+      <stop offset="100%" stop-color="#7A571B"/>
+    </linearGradient>
+    <linearGradient id="m-gold-light" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F1DFA8"/>
+      <stop offset="100%" stop-color="#B0843A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Top filigree above T -->
+  <g stroke="url(#m-gold)" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.9">
+    <path d="M 220 180 Q 300 156 400 156 Q 500 156 580 180"/>
+    <path d="M 270 198 Q 340 180 400 180 Q 460 180 530 198"/>
+  </g>
+  <g fill="url(#m-gold)">
+    <circle cx="400" cy="140" r="3"/>
+    <circle cx="220" cy="180" r="2.2"/>
+    <circle cx="580" cy="180" r="2.2"/>
+  </g>
+
+  <!-- ============= -->
+  <!-- T LETTERFORM  -->
+  <!-- ============= -->
+  <g fill="url(#m-gold)">
+    <!-- Top serif bar with bracketed serifs -->
+    <path d="M 168 250
+             Q 168 238 180 238
+             L 472 238
+             Q 484 238 484 250
+             L 484 286
+             Q 470 292 460 302
+             Q 454 308 448 310
+             L 204 310
+             Q 198 308 192 302
+             Q 182 292 168 286 Z"/>
+    <!-- Inner sheen on top bar -->
+    <path d="M 184 250 L 470 250 L 470 256 L 184 256 Z" fill="url(#m-gold-light)" opacity="0.55"/>
+    <!-- Vertical stem with foot serifs -->
+    <path d="M 300 310
+             L 300 712
+             Q 300 728 290 738
+             Q 280 746 274 750
+             L 274 762
+             L 378 762
+             L 378 750
+             Q 372 746 362 738
+             Q 352 728 352 712
+             L 352 310 Z"/>
+    <!-- Stem highlight -->
+    <path d="M 306 320 L 306 710 Q 306 720 302 728 L 312 728 L 312 320 Z"
+          fill="url(#m-gold-light)" opacity="0.5"/>
+  </g>
+
+  <!-- ============= -->
+  <!-- C LETTERFORM  -->
+  <!-- ============= -->
+  <g fill="none" stroke="url(#m-gold)" stroke-width="46" stroke-linecap="round">
+    <path d="M 624 360
+             C 552 360 500 432 500 510
+             C 500 588 552 660 624 660"/>
+  </g>
+  <g fill="none" stroke="url(#m-gold-light)" stroke-width="6" stroke-linecap="round" opacity="0.7">
+    <path d="M 632 392
+             C 572 392 532 446 532 510
+             C 532 574 572 628 632 628"/>
+  </g>
+  <!-- C terminal serifs -->
+  <g fill="url(#m-gold)">
+    <path d="M 604 348 Q 624 348 638 358 L 636 380 Q 620 368 604 374 Z"/>
+    <path d="M 604 672 Q 624 672 638 662 L 636 640 Q 620 652 604 646 Z"/>
+  </g>
+
+  <!-- ============= -->
+  <!-- Floral flourish off C -->
+  <!-- ============= -->
+  <g stroke="url(#m-gold)" stroke-width="2.4" fill="none" stroke-linecap="round">
+    <path d="M 636 660 Q 700 690 730 736 Q 752 778 750 818"/>
+    <path d="M 670 686 Q 700 696 720 724"/>
+    <path d="M 700 706 Q 738 724 758 762"/>
+    <path d="M 720 738 Q 746 754 770 750"/>
+    <path d="M 736 776 Q 760 786 778 778"/>
+  </g>
+  <g fill="url(#m-gold-light)" stroke="url(#m-gold)" stroke-width="0.8">
+    <ellipse cx="722" cy="724" rx="6" ry="11" transform="rotate(30 722 724)"/>
+    <ellipse cx="758" cy="762" rx="6" ry="11" transform="rotate(45 758 762)"/>
+    <ellipse cx="770" cy="750" rx="6" ry="11" transform="rotate(-10 770 750)"/>
+    <ellipse cx="778" cy="778" rx="7" ry="12" transform="rotate(20 778 778)"/>
+    <ellipse cx="750" cy="818" rx="7" ry="12" transform="rotate(-15 750 818)"/>
+  </g>
+  <g fill="url(#m-gold-light)" opacity="0.85">
+    <path d="M 690 706 Q 702 700 712 708 Q 700 716 690 706 Z"/>
+    <path d="M 730 754 Q 744 750 752 760 Q 740 766 730 754 Z"/>
+  </g>
+  <g fill="url(#m-gold)">
+    <circle cx="678" cy="688" r="2.2"/>
+    <circle cx="704" cy="700" r="2.2"/>
+    <circle cx="724" cy="744" r="2.2"/>
+  </g>
+
+  <!-- ============= -->
+  <!-- WORDMARK -->
+  <!-- ============= -->
+  <g fill="url(#m-gold)" font-family="'Cormorant Garamond', 'Times New Roman', serif" text-anchor="middle">
+    <text x="400" y="858" font-size="80" letter-spacing="22" font-weight="500">TRESOR</text>
+    <text x="400" y="916" font-size="28" letter-spacing="20" font-weight="400">COUTURE</text>
+  </g>
+
+  <!-- Decorative ornaments around COUTURE -->
+  <g stroke="url(#m-gold)" stroke-width="1.4" stroke-linecap="round">
+    <line x1="100" y1="906" x2="226" y2="906"/>
+    <line x1="574" y1="906" x2="700" y2="906"/>
+  </g>
+  <g fill="url(#m-gold)">
+    <polygon points="226,906 238,898 238,914"/>
+    <polygon points="574,906 562,898 562,914"/>
+    <circle cx="100" cy="906" r="2.4"/>
+    <circle cx="700" cy="906" r="2.4"/>
+  </g>
+</svg>

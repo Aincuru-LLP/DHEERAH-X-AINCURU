@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "Dheerah Designer Boutique",
+  "version": "2.0.0",
+  "description": "Brand colour tokens for Dheerah Designer Boutique. All values are sRGB.",
+  "tokens": {
+    "crimson": {
+      "value": "#C7042B",
+      "role": "Primary brand accent, key CTAs, active indicators.",
+      "css": "--dheerah-crimson"
+    },
+    "crimson-dark": {
+      "value": "#8F0320",
+      "role": "Hover and pressed states for crimson actions.",
+      "css": "--dheerah-crimson-dark"
+    },
+    "gold": {
+      "value": "#CC9E00",
+      "role": "Refined gold micro-details, lines, borders.",
+      "css": "--dheerah-gold"
+    },
+    "gold-light": {
+      "value": "#E3AF00",
+      "role": "Gold highlights and stars.",
+      "css": "--dheerah-gold-light"
+    },
+    "black": {
+      "value": "#050505",
+      "role": "Primary headers, dark luxury contrast sections, text.",
+      "css": "--dheerah-black"
+    },
+    "charcoal": {
+      "value": "#1C1A18",
+      "role": "Body typography and deep neutral surfaces.",
+      "css": "--dheerah-charcoal"
+    },
+    "ivory": {
+      "value": "#FAF7F0",
+      "role": "Primary warm canvas and clean content background.",
+      "css": "--dheerah-ivory"
+    },
+    "cream": {
+      "value": "#F1E6D2",
+      "role": "Secondary surface and editorial background.",
+      "css": "--dheerah-cream"
+    },
+    "beige": {
+      "value": "#E8D7BD",
+      "role": "Delicate hairline dividers and borders.",
+      "css": "--dheerah-beige"
+    }
+  },
+  "typography": {
+    "display": {
+      "family": "'Manrope', system-ui, sans-serif",
+      "weights": [400, 500, 600, 700, 800],
+      "use": "Headings, titles, prices, navigation, buttons."
+    },
+    "body": {
+      "family": "'Assistant', -apple-system, sans-serif",
+      "weights": [300, 400, 500, 600, 700, 800],
+      "use": "Body copy, descriptions, forms, specifications."
+    },
+    "serif": {
+      "family": "'Cormorant Garamond', serif",
+      "weights": [400, 500, 600, 700],
+      "use": "Campaign titles, bridal editorial, lookbook headlines."
+    }
+  }
+}

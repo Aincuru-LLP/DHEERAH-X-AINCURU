@@ -1,0 +1,2262 @@
+{
+  "info": {
+    "name": "Tresor Couture · Free-Tier Backend",
+    "_postman_id": "trsr-couture-firebase-free",
+    "description": "Talks directly to Firebase Identity Toolkit + Firestore REST against the tresor-couture project.\n\nThe collection-level pre-request hook generates a unique testEmail/testPassword per run so Newman re-runs do not collide with the previous user.\n\n**Run with Newman:** `npx newman run postman/tresor-couture.postman_collection.json -e postman/tresor-couture.postman_environment.json`\n\n**Admin-only requests** (product CRUD, coupon write, order admin update, review approve) are sent with the regular {{idToken}} and ASSERT 403 — that proves firestore.rules is correctly denying non-admin writes. If you have an admin custom-claim token, populate {{adminIdToken}} and switch the Authorization header back to test the success path.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{idtBase}}/accounts:signUp?key={{apiKey}}",
+              "host": [
+                "{{idtBase}}"
+              ],
+              "path": [
+                "accounts:signUp"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{apiKey}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"returnSecureToken\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = pm.response.json();",
+                  "if (b.idToken)      pm.environment.set('idToken',      b.idToken);",
+                  "if (b.refreshToken) pm.environment.set('refreshToken', b.refreshToken);",
+                  "if (b.localId)      pm.environment.set('uid',          b.localId);",
+                  "pm.test('200 OK',           () => pm.response.to.have.status(200));",
+                  "pm.test('idToken captured', () => pm.expect(b.idToken).to.be.a('string').and.have.length.greaterThan(20));",
+                  "pm.test('localId captured', () => pm.expect(b.localId).to.be.a('string'));",
+                  "pm.test('email echo',       () => pm.expect(b.email).to.eql(pm.environment.get('testEmail')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{idtBase}}/accounts:signInWithPassword?key={{apiKey}}",
+              "host": [
+                "{{idtBase}}"
+              ],
+              "path": [
+                "accounts:signInWithPassword"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{apiKey}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"returnSecureToken\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = pm.response.json();",
+                  "if (b.idToken)      pm.environment.set('idToken',      b.idToken);",
+                  "if (b.refreshToken) pm.environment.set('refreshToken', b.refreshToken);",
+                  "if (b.localId)      pm.environment.set('uid',          b.localId);",
+                  "pm.test('200 OK',           () => pm.response.to.have.status(200));",
+                  "pm.test('idToken refreshed',() => pm.expect(b.idToken).to.be.a('string'));",
+                  "pm.test('uid stable',       () => pm.expect(b.localId).to.eql(pm.environment.get('uid')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "https://securetoken.googleapis.com/v1/token?key={{apiKey}}",
+              "host": [
+                "https://securetoken.googleapis.com"
+              ],
+              "path": [
+                "v1",
+                "token"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{apiKey}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "refresh_token"
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{refreshToken}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = pm.response.json();",
+                  "if (b.id_token)      pm.environment.set('idToken',      b.id_token);",
+                  "if (b.refresh_token) pm.environment.set('refreshToken', b.refresh_token);",
+                  "pm.test('200 OK',            () => pm.response.to.have.status(200));",
+                  "pm.test('new id_token issued',  () => pm.expect(b.id_token).to.be.a('string'));",
+                  "pm.test('refresh_token rotated',() => pm.expect(b.refresh_token).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create my profile (after Register)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/users/{{uid}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "users",
+                "{{uid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"uid\":      { \"stringValue\": \"{{uid}}\" },\n    \"email\":    { \"stringValue\": \"{{testEmail}}\" },\n    \"fullName\": { \"stringValue\": \"Test User\" },\n    \"role\":     { \"stringValue\": \"customer\" },\n    \"createdAt\":{ \"timestampValue\": \"2026-01-01T00:00:00Z\" }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('doc returned',     () => pm.expect(b.name).to.include('users/' + pm.environment.get('uid')));",
+                  "pm.test('role = customer',  () => pm.expect(b.fields.role.stringValue).to.eql('customer'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/users/{{uid}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "users",
+                "{{uid}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('fullName persisted', () => pm.expect(b.fields.fullName.stringValue).to.eql('Test User'));",
+                  "pm.test('uid matches',        () => pm.expect(b.fields.uid.stringValue).to.eql(pm.environment.get('uid')));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List all",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{fsBase}}/products?pageSize=50",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = pm.response.json();",
+                  "if (b.documents && b.documents[0]) {",
+                  "  pm.environment.set('productId', b.documents[0].name.split('/').pop());",
+                  "}",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('catalogue not empty', () => pm.expect(b.documents).to.be.an('array').and.have.length.greaterThan(0));",
+                  "pm.test('productId captured',  () => pm.expect(pm.environment.get('productId')).to.be.a('string').and.have.length.greaterThan(0));",
+                  "pm.test('price on first doc', () => pm.expect(b.documents[0].fields.price).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get one",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{fsBase}}/products/{{productId}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('doc id matches', () => pm.expect(b.name).to.include('products/' + pm.environment.get('productId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filter by master category (Sarees)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents:runQuery",
+              "host": [
+                "https://firestore.googleapis.com"
+              ],
+              "path": [
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "databases",
+                "(default)",
+                "documents:runQuery"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"structuredQuery\": {\n    \"from\": [{ \"collectionId\": \"products\" }],\n    \"where\": {\n      \"fieldFilter\": {\n        \"field\": { \"fieldPath\": \"masterCategory\" },\n        \"op\": \"EQUAL\",\n        \"value\": { \"stringValue\": \"Sarees\" }\n      }\n    },\n    \"limit\": 50\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const arr = pm.response.json();",
+                  "pm.test('runQuery returns array', () => pm.expect(arr).to.be.an('array'));",
+                  "const hits = arr.filter(r => r.document);",
+                  "if (hits.length > 0) {",
+                  "  pm.test('masterCategory filter holds', () => hits.forEach(h => pm.expect(h.document.fields.masterCategory.stringValue).to.eql('Sarees')));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/products",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"brand\":          { \"stringValue\": \"TRESOR\" },\n    \"name\":           { \"stringValue\": \"Sample Banarasi\" },\n    \"description\":    { \"stringValue\": \"Seeded via Postman.\" },\n    \"price\":  { \"integerValue\": \"4500\" },\n    \"mrp\":    { \"integerValue\": \"7999\" },\n    \"photo\":          { \"stringValue\": \"/products/banarasi-purple-1.jpg\" },\n    \"image\":          { \"stringValue\": \"/products/banarasi-purple-1.jpg\" },\n    \"category\":       { \"stringValue\": \"Silk\" },\n    \"masterCategory\": { \"stringValue\": \"Sarees\" },\n    \"subCategory\":    { \"stringValue\": \"Banarasi\" },\n    \"origin\":         { \"stringValue\": \"Varanasi\" },\n    \"tags\":           { \"arrayValue\": { \"values\": [{ \"stringValue\": \"sample\" }] } },\n    \"sticker\":        { \"stringValue\": \"Trending\" },\n    \"stock\":  { \"integerValue\": \"20\" }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rule denies non-admin create (403)', () => pm.expect(pm.response.code).to.eql(403));",
+                  "// Don't propagate productId from a denied response — keep the listed one."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update price (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/products/{{productId}}?updateMask.fieldPaths=price&updateMask.fieldPaths=sticker",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ],
+              "query": [
+                {
+                  "key": "updateMask.fieldPaths",
+                  "value": "price"
+                },
+                {
+                  "key": "updateMask.fieldPaths",
+                  "value": "sticker"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"price\": { \"integerValue\": \"4800\" },\n    \"sticker\":       { \"stringValue\": \"Bestseller\" }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rule denies non-admin update (403)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/products/{{productId}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rule denies non-admin delete (403)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Coupons",
+      "item": [
+        {
+          "name": "Create WELCOME10 (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/coupons/WELCOME10",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "coupons",
+                "WELCOME10"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"code\":        { \"stringValue\": \"WELCOME10\" },\n    \"description\": { \"stringValue\": \"10% off first order\" },\n    \"kind\":        { \"stringValue\": \"percent\" },\n    \"value\":       { \"integerValue\": \"10\" },\n    \"minSubtotal\": { \"integerValue\": \"1999\" },\n    \"maxDiscount\": { \"integerValue\": \"2000\" },\n    \"active\":      { \"booleanValue\": true }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rule denies non-admin write (403)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get WELCOME10",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{fsBase}}/coupons/WELCOME10",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "coupons",
+                "WELCOME10"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 or 404', () => pm.expect([200, 404]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) {",
+                  "  const b = pm.response.json();",
+                  "  pm.test('code field present', () => pm.expect(b.fields.code).to.exist);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Place order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/orders",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"userId\":   { \"stringValue\": \"{{uid}}\" },\n    \"status\":   { \"stringValue\": \"placed\" },\n    \"placedAt\": { \"timestampValue\": \"2026-05-15T00:00:00Z\" },\n    \"paymentMethod\": { \"stringValue\": \"upi\" },\n    \"subtotal\": { \"integerValue\": \"13500\" },\n    \"tax\":      { \"integerValue\": \"675\" },\n    \"shipping\": { \"integerValue\": \"0\" },\n    \"total\":    { \"integerValue\": \"14175\" },\n    \"shippingAddress\": { \"mapValue\": { \"fields\": {\n      \"fullName\":   { \"stringValue\": \"Test User\" },\n      \"email\":      { \"stringValue\": \"{{testEmail}}\" },\n      \"phone\":      { \"stringValue\": \"9876543210\" },\n      \"line1\":      { \"stringValue\": \"Plot 12, Banjara Hills\" },\n      \"city\":       { \"stringValue\": \"Hyderabad\" },\n      \"state\":      { \"stringValue\": \"Telangana\" },\n      \"postalCode\": { \"stringValue\": \"500034\" },\n      \"country\":    { \"stringValue\": \"India\" }\n    }}},\n    \"items\": { \"arrayValue\": { \"values\": [\n      { \"mapValue\": { \"fields\": {\n        \"fabricId\": { \"stringValue\": \"{{productId}}\" },\n        \"quantity\": { \"integerValue\": \"3\" }\n      }}}\n    ]}}\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Orders are SERVER-ONLY: firestore.rules has `allow create: if false`.",
+                  "// Real orders are created by /api/orders/place (Admin SDK, which recomputes",
+                  "// pricing + decrements stock). A client writing straight to /orders MUST be denied.",
+                  "pm.test('client REST order-create denied (server-only via /api/orders/place)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My orders (runQuery)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://firestore.googleapis.com/v1/projects/{{projectId}}/databases/(default)/documents:runQuery",
+              "host": [
+                "https://firestore.googleapis.com"
+              ],
+              "path": [
+                "v1",
+                "projects",
+                "{{projectId}}",
+                "databases",
+                "(default)",
+                "documents:runQuery"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"structuredQuery\": {\n    \"from\": [{ \"collectionId\": \"orders\" }],\n    \"where\": {\n      \"fieldFilter\": {\n        \"field\": { \"fieldPath\": \"userId\" },\n        \"op\": \"EQUAL\",\n        \"value\": { \"stringValue\": \"{{uid}}\" }\n      }\n    },\n    \"orderBy\": [{ \"field\": { \"fieldPath\": \"placedAt\" }, \"direction\": \"DESCENDING\" }],\n    \"limit\": 50\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Orders are server-created (/api/orders/place), so a Postman-only run may",
+                  "// have none. The security assertion is that the query NEVER returns another",
+                  "// user's orders — whether it yields the caller's rows (200) or nothing.",
+                  "const code = pm.response.code;",
+                  "pm.test('own-orders query never leaks other users', () => {",
+                  "  if (code === 200) {",
+                  "    const docs = pm.response.json().filter(r => r.document);",
+                  "    docs.forEach(d => pm.expect(d.document.fields.userId.stringValue).to.eql(pm.environment.get('uid')));",
+                  "  } else {",
+                  "    pm.expect([403, 404]).to.include(code);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark shipped (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/orders/any-server-created-order?updateMask.fieldPaths=status",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "orders",
+                "any-server-created-order"
+              ],
+              "query": [
+                {
+                  "key": "updateMask.fieldPaths",
+                  "value": "status"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": { \"status\": { \"stringValue\": \"shipped\" } }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Order status changes are admin-only (fulfilment). A non-admin token must be denied.",
+                  "pm.test('non-admin order status change denied', () => pm.expect([403, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Create review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/reviews",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"fabricId\":   { \"stringValue\": \"{{productId}}\" },\n    \"userId\":     { \"stringValue\": \"{{uid}}\" },\n    \"authorName\": { \"stringValue\": \"Test User\" },\n    \"rating\":     { \"integerValue\": \"5\" },\n    \"title\":      { \"stringValue\": \"Loved it\" },\n    \"body\":       { \"stringValue\": \"Exquisite hand-finish.\" },\n    \"status\":     { \"stringValue\": \"pending\" },\n    \"createdAt\":  { \"timestampValue\": \"2026-05-15T00:00:00Z\" }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = pm.response.json();",
+                  "if (b.name) pm.environment.set('reviewId', b.name.split('/').pop());",
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('review doc returned',  () => pm.expect(b.name).to.include('reviews/'));",
+                  "pm.test('status pending',       () => pm.expect(b.fields.status.stringValue).to.eql('pending'));",
+                  "pm.test('fabricId set',         () => pm.expect(b.fields.fabricId.stringValue).to.eql(pm.environment.get('productId')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Approve (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/reviews/{{reviewId}}?updateMask.fieldPaths=status",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "reviews",
+                "{{reviewId}}"
+              ],
+              "query": [
+                {
+                  "key": "updateMask.fieldPaths",
+                  "value": "status"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": { \"status\": { \"stringValue\": \"approved\" } }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rule denies non-admin moderate (403)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Negative & Security",
+      "description": "Exercises firestore.rules — every assertion expects the rule to deny. Passing here proves the security boundary is intact.",
+      "item": [
+        {
+          "name": "Login · wrong password (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{idtBase}}/accounts:signInWithPassword?key={{apiKey}}",
+              "host": [
+                "{{idtBase}}"
+              ],
+              "path": [
+                "accounts:signInWithPassword"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{apiKey}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"definitely-not-the-right-password\",\n  \"returnSecureToken\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejects with 400',     () => pm.response.to.have.status(400));",
+                  "const b = pm.response.json();",
+                  "pm.test('error message present',() => pm.expect(b.error).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register secondary user (setup)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{idtBase}}/accounts:signUp?key={{apiKey}}",
+              "host": [
+                "{{idtBase}}"
+              ],
+              "path": [
+                "accounts:signUp"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{apiKey}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{secondaryEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"returnSecureToken\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const b = pm.response.json();",
+                  "if (b.idToken) pm.environment.set('secondaryIdToken', b.idToken);",
+                  "if (b.localId) pm.environment.set('secondaryUid',     b.localId);",
+                  "pm.test('200 OK',                  () => pm.response.to.have.status(200));",
+                  "pm.test('secondary tokens captured',() => pm.expect(b.idToken).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read other user profile (expect 403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/users/{{secondaryUid}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "users",
+                "{{secondaryUid}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rule denies cross-user read', () => pm.expect([403, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Promote myself to admin (expect 403)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/users/{{uid}}?updateMask.fieldPaths=role",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "users",
+                "{{uid}}"
+              ],
+              "query": [
+                {
+                  "key": "updateMask.fieldPaths",
+                  "value": "role"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"role\": {\n      \"stringValue\": \"admin\"\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('role change denied by rules (403)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Place order without auth (expect 401/403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/orders",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"userId\": {\n      \"stringValue\": \"anonymous\"\n    },\n    \"status\": {\n      \"stringValue\": \"placed\"\n    },\n    \"placedAt\": {\n      \"timestampValue\": \"2026-05-15T00:00:00Z\"\n    },\n    \"total\": {\n      \"integerValue\": \"100\"\n    },\n    \"items\": {\n      \"arrayValue\": {\n        \"values\": [\n          {\n            \"mapValue\": {\n              \"fields\": {\n                \"fabricId\": {\n                  \"stringValue\": \"x\"\n                },\n                \"quantity\": {\n                  \"integerValue\": \"1\"\n                }\n              }\n            }\n          }\n        ]\n      }\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('unauth create denied', () => pm.expect([401, 403]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Place order with someone else userId (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/orders",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"userId\": {\n      \"stringValue\": \"{{secondaryUid}}\"\n    },\n    \"status\": {\n      \"stringValue\": \"placed\"\n    },\n    \"placedAt\": {\n      \"timestampValue\": \"2026-05-15T00:00:00Z\"\n    },\n    \"total\": {\n      \"integerValue\": \"100\"\n    },\n    \"items\": {\n      \"arrayValue\": {\n        \"values\": [\n          {\n            \"mapValue\": {\n              \"fields\": {\n                \"fabricId\": {\n                  \"stringValue\": \"{{productId}}\"\n                },\n                \"quantity\": {\n                  \"integerValue\": \"1\"\n                }\n              }\n            }\n          }\n        ]\n      }\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('userId-mismatch denied (403)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Self-approved review (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/reviews",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"fabricId\": {\n      \"stringValue\": \"{{productId}}\"\n    },\n    \"userId\": {\n      \"stringValue\": \"{{uid}}\"\n    },\n    \"authorName\": {\n      \"stringValue\": \"TEST_PostmanRun\"\n    },\n    \"rating\": {\n      \"integerValue\": \"5\"\n    },\n    \"body\": {\n      \"stringValue\": \"TEST self-approval\"\n    },\n    \"status\": {\n      \"stringValue\": \"approved\"\n    },\n    \"createdAt\": {\n      \"timestampValue\": \"2026-05-15T00:00:00Z\"\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status=approved on create denied (403)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Out-of-range rating (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/reviews",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"fabricId\": {\n      \"stringValue\": \"{{productId}}\"\n    },\n    \"userId\": {\n      \"stringValue\": \"{{uid}}\"\n    },\n    \"authorName\": {\n      \"stringValue\": \"TEST_PostmanRun\"\n    },\n    \"rating\": {\n      \"integerValue\": \"10\"\n    },\n    \"body\": {\n      \"stringValue\": \"TEST out-of-range rating\"\n    },\n    \"status\": {\n      \"stringValue\": \"pending\"\n    },\n    \"createdAt\": {\n      \"timestampValue\": \"2026-05-15T00:00:00Z\"\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rating out of [1,5] denied (403)', () => pm.expect(pm.response.code).to.eql(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anonymous review (expect 401/403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/reviews",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "reviews"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"fabricId\": {\n      \"stringValue\": \"{{productId}}\"\n    },\n    \"userId\": {\n      \"stringValue\": \"anonymous\"\n    },\n    \"authorName\": {\n      \"stringValue\": \"Anonymous\"\n    },\n    \"rating\": {\n      \"integerValue\": \"3\"\n    },\n    \"body\": {\n      \"stringValue\": \"no auth\"\n    },\n    \"status\": {\n      \"stringValue\": \"pending\"\n    },\n    \"createdAt\": {\n      \"timestampValue\": \"2026-05-15T00:00:00Z\"\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anon review denied', () => pm.expect([401, 403]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read other user cart (expect 403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/carts/{{secondaryUid}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "carts",
+                "{{secondaryUid}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('cross-user cart read denied', () => pm.expect([403, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Write own cart (positive — expect 200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/carts/{{uid}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "carts",
+                "{{uid}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"items\": {\n      \"arrayValue\": {\n        \"values\": [\n          {\n            \"mapValue\": {\n              \"fields\": {\n                \"fabricId\": {\n                  \"stringValue\": \"{{productId}}\"\n                },\n                \"quantity\": {\n                  \"integerValue\": \"2\"\n                }\n              }\n            }\n          }\n        ]\n      }\n    },\n    \"updatedAt\": {\n      \"timestampValue\": \"2026-05-15T00:00:00Z\"\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK',              () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('cart doc returned',    () => pm.expect(b.name).to.include('carts/' + pm.environment.get('uid')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anonymous products list (positive — expect 200)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{fsBase}}/products?pageSize=5",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "pageSize",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK (public read allowed)', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('returns documents', () => pm.expect(b.documents).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read CRM overlay (admin-only — expect 403/404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/crm/{{uid}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "crm",
+                "{{uid}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// CRM notes/tags/lifecycle are back-office data — never customer-readable.",
+                  "pm.test('CRM overlay is admin-only (customer denied)', () => pm.expect([403, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create return without auth (expect 401/403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/returns",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "returns"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"userId\":     { \"stringValue\": \"anon\" },\n    \"orderId\":    { \"stringValue\": \"x\" },\n    \"status\":     { \"stringValue\": \"requested\" },\n    \"resolution\": { \"stringValue\": \"refund\" },\n    \"items\": { \"arrayValue\": { \"values\": [ { \"mapValue\": { \"fields\": { \"fabricId\": { \"stringValue\": \"x\" }, \"quantity\": { \"integerValue\": \"1\" } } } } ] } }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous return create denied', () => pm.expect([401, 403]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create chat for an order you don't own (expect 403)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/chats/not-your-order",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "chats",
+                "not-your-order"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fields\": {\n    \"orderId\": { \"stringValue\": \"not-your-order\" },\n    \"userId\":  { \"stringValue\": \"{{uid}}\" },\n    \"status\":  { \"stringValue\": \"open\" }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Chat is per-order — creating one requires owning the referenced order.",
+                  "pm.test('chat create for non-owned order denied', () => pm.expect([403, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "description": "Owner-deletes for state-creating tests. Rules allow owner to delete their own review and cart. Orders stay (admin-only delete).",
+      "item": [
+        {
+          "name": "Delete my review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/reviews/{{reviewId}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "reviews",
+                "{{reviewId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200/204 OK', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete my cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{fsBase}}/carts/{{uid}}",
+              "host": [
+                "{{fsBase}}"
+              ],
+              "path": [
+                "carts",
+                "{{uid}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200/204 OK', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Serverless API (/api/*)",
+      "description": "Security contract for the Vercel serverless endpoints. These are NOT covered by the Firebase emulator suite (the static preview serves no /api), so they run against a DEPLOYED environment: set apiBase to the deployment origin, e.g. https://tresorcouture.in. Every assertion here is a negative one — none of these requests may ever succeed — so the suite is safe to run against production.",
+      "item": [
+        {
+          "name": "Health · GET /api/health (expect 200 when configured)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBase}}/api/health",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responds 200 or 503', () => pm.expect([200,503]).to.include(pm.response.code));",
+                  "const b = pm.response.json();",
+                  "pm.test('reports ok flag', () => pm.expect(b).to.have.property('ok'));",
+                  "pm.test('does not leak which integrations are configured', () =>",
+                  "  pm.expect(Object.keys(b).sort().join(',')).to.eql('ok,timestamp'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CSRF · GET /api/csrf issues a token cookie",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBase}}/api/csrf",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "csrf"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('responds 200', () => pm.response.to.have.status(200));",
+                  "const setCookie = pm.response.headers.get('Set-Cookie') || '';",
+                  "pm.test('sets tresor_csrf cookie', () => pm.expect(setCookie).to.include('tresor_csrf'));",
+                  "pm.test('cookie is SameSite=Strict', () => pm.expect(setCookie).to.include('SameSite=Strict'));",
+                  "const m = /tresor_csrf=([^;]+)/.exec(setCookie);",
+                  "if (m) pm.environment.set('csrfToken', decodeURIComponent(m[1]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders · POST /api/orders/place without auth (expect 401/403/503)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/orders/place",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "place"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order\": {\n    \"items\": [\n      {\n        \"fabricId\": \"1\",\n        \"quantity\": 1\n      }\n    ],\n    \"paymentMethod\": \"cod\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Unauthenticated order placement must never succeed. 503 is acceptable",
+                  "// only when the deployment has no service-account configured.",
+                  "pm.test('never creates an order anonymously', () =>",
+                  "  pm.expect([401,403,503]).to.include(pm.response.code));",
+                  "pm.test('no order id returned', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders · POST /api/orders/place without CSRF (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/orders/place",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "place"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order\": {\n    \"items\": [\n      {\n        \"fabricId\": \"1\",\n        \"quantity\": 1\n      }\n    ],\n    \"paymentMethod\": \"cod\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected without a CSRF token', () => pm.expect([403]).to.include(pm.response.code));",
+                  "pm.test('reports csrf_token_invalid', () => pm.expect(pm.response.text()).to.include('csrf'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders · GET /api/orders/place (expect 405)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBase}}/api/orders/place",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "place"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('method not allowed', () => pm.expect([403,405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payments · POST /api/payments/create-order without auth (expect 401/503)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/payments/create-order",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "create-order"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"fabricId\": \"1\",\n      \"quantity\": 1\n    }\n  ],\n  \"paymentMethod\": \"card\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Must not mint a Razorpay order for an anonymous caller.",
+                  "pm.test('no anonymous payment order', () => pm.expect([401,403,503]).to.include(pm.response.code));",
+                  "pm.test('no razorpay order id leaked', () => pm.expect(pm.response.text()).to.not.match(/order_[A-Za-z0-9]/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payments · POST /api/payments/verify with a forged signature (expect 400/401/403/503)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/payments/verify",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"success\": {\n    \"razorpay_order_id\": \"order_FORGED\",\n    \"razorpay_payment_id\": \"pay_FORGED\",\n    \"razorpay_signature\": \"deadbeef\"\n  },\n  \"order\": {\n    \"items\": [\n      {\n        \"fabricId\": \"1\",\n        \"quantity\": 1\n      }\n    ],\n    \"paymentMethod\": \"card\",\n    \"shippingAddress\": {}\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// THE critical payment control: a forged signature must never produce a paid order.",
+                  "pm.test('forged signature rejected', () =>",
+                  "  pm.expect([400,401,403,503]).to.include(pm.response.code));",
+                  "pm.test('response is not a success', () => pm.expect(pm.response.text()).to.not.include('\"ok\":true'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Payments · POST /api/payments/webhook with a bad signature (expect 400/401/503)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Razorpay-Signature",
+                "value": "not-a-valid-signature"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/payments/webhook",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "webhook"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": {}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('unsigned webhook rejected', () => pm.expect([400,401,403,503]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bulk email · POST /api/email/bulk as a NON-admin (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/email/bulk",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"should never send\",\n  \"htmlContent\": \"<p>hi</p>\",\n  \"listId\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// A normal signed-in customer must not be able to mail the whole list.",
+                  "pm.test('non-admin cannot send bulk email', () =>",
+                  "  pm.expect([401,403,503]).to.include(pm.response.code));",
+                  "pm.test('no campaign id returned', () => pm.expect(pm.response.text()).to.not.include('campaignId'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bulk email · POST /api/email/bulk anonymously (expect 401/403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/email/bulk",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"should never send\",\n  \"htmlContent\": \"<p>hi</p>\",\n  \"listId\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous cannot send bulk email', () =>",
+                  "  pm.expect([401,403,503]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bulk email · script tag in htmlContent is refused (expect 400/401/403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminIdToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/email/bulk",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "email",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"xss attempt\",\n  \"htmlContent\": \"<p>hi</p><script>alert(1)</script>\",\n  \"listId\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Even an admin may not relay active content into customer inboxes.",
+                  "pm.test('active content refused', () =>",
+                  "  pm.expect([400,401,403,503]).to.include(pm.response.code));",
+                  "pm.test('never reports a sent campaign', () => pm.expect(pm.response.text()).to.not.include('campaignId'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Counter · POST /api/pos/sale as a NON-admin (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/pos/sale",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "pos",
+                "sale"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sale\": {\n    \"items\": [\n      {\n        \"fabricId\": \"1\",\n        \"quantity\": 1\n      }\n    ],\n    \"paymentMethod\": \"cash\",\n    \"saleKey\": \"postman-negative\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// THE most important negative in the suite: the counter mints PAID orders",
+                  "// and moves stock, so a customer token must never get through.",
+                  "pm.test('a customer cannot ring up a sale', () =>",
+                  "  pm.expect([401,403,503]).to.include(pm.response.code));",
+                  "pm.test('no order id returned', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Counter · POST /api/pos/sale anonymously (expect 401/403/503)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/pos/sale",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "pos",
+                "sale"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sale\": {\n    \"items\": [\n      {\n        \"fabricId\": \"1\",\n        \"quantity\": 1\n      }\n    ],\n    \"paymentMethod\": \"cash\",\n    \"saleKey\": \"postman-anon\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('never sells anonymously', () => pm.expect([401,403,503]).to.include(pm.response.code));",
+                  "pm.test('no order id returned', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Counter · POST /api/pos/sale without CSRF (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/pos/sale",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "pos",
+                "sale"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sale\": {\n    \"items\": [\n      {\n        \"fabricId\": \"1\",\n        \"quantity\": 1\n      }\n    ],\n    \"paymentMethod\": \"cash\",\n    \"saleKey\": \"postman-nocsrf\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('rejected without a CSRF token', () => pm.expect([403]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Counter · GET /api/pos/sale (expect 405)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiBase}}/api/pos/sale",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "pos",
+                "sale"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('method not allowed', () => pm.expect([403,405]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Counter · body carrying userId / total / paymentStatus is ignored (expect no order)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "tresor_csrf={{csrfToken}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{idToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/pos/sale",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "pos",
+                "sale"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sale\": {\n    \"items\": [\n      {\n        \"fabricId\": \"1\",\n        \"quantity\": 1\n      }\n    ],\n    \"paymentMethod\": \"cash\",\n    \"saleKey\": \"postman-smuggle\",\n    \"userId\": \"attacker\",\n    \"total\": 1,\n    \"paymentStatus\": \"paid\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Identity, money and settlement state are the server's to set. With a",
+                  "// non-admin token this is refused outright; the assertion that matters is",
+                  "// that no order is ever reported back.",
+                  "pm.test('no order created', () => pm.expect([400,401,403,503]).to.include(pm.response.code));",
+                  "pm.test('no order id returned', () => pm.expect(pm.response.text()).to.not.include('orderId'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CORS · POST from a disallowed origin (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Origin",
+                "value": "https://evil.example"
+              }
+            ],
+            "url": {
+              "raw": "{{apiBase}}/api/orders/place",
+              "host": [
+                "{{apiBase}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "place"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('foreign origin rejected', () => pm.expect([403]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Fresh testEmail/testPassword per Newman run so re-runs don't trip EMAIL_EXISTS.",
+          "if (!pm.environment.get('runId')) {",
+          "  const runId = Date.now() + '-' + Math.floor(Math.random() * 1e4);",
+          "  pm.environment.set('runId', runId);",
+          "  pm.environment.set('testEmail',      `postman+${runId}@tresor.test`);",
+          "  pm.environment.set('testPassword',   `Pm${runId}!aA`);",
+          "  pm.environment.set('secondaryEmail', `postman+${runId}-secondary@tresor.test`);",
+          "}"
+        ]
+      }
+    }
+  ]
+}

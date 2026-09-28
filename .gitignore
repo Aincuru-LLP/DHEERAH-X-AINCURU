@@ -1,0 +1,84 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.venv-pptx/
+.env*
+.claude/
+!.env.example
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+functions/lib/
+functions/node_modules/
+
+# Firebase Admin SDK service-account keys — SECRETS. Never commit. Keep these
+# outside the repo (or here, gitignored) and reference via GOOGLE_APPLICATION_CREDENTIALS.
+*serviceAccount*.json
+*service-account*.json
+*-adminsdk-*.json
+secrets/
+
+# Newman / Postman run artefacts — regenerated locally, not part of source.
+postman/run-report.json
+
+# E2E test artifacts (screenshots, reports, OTP scratch) — regenerated locally.
+e2e/live/
+e2e/live-auth/
+e2e/live-func/
+e2e/navbar/
+e2e/artifacts/
+e2e/artifacts-signedin/
+e2e/artifacts-phone/
+e2e/otp.txt
+
+# Playwright E2E artefacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+.playwright-mcp/
+
+# E2E screenshot output (generated)
+tests/emulator/screens/
+tests/emulator/screens-mobile/
+test-results/
+tests/emulator/screens-ui/
+tests/emulator/artifacts/
+__pycache__/
+
+# Unused documents, archives, and spreadsheets
+*.docx
+*.doc
+*.pptx
+*.xlsx
+*.pdf
+*.zip
+docs/test-reports/
+
+# Root test/scratch images and files
+/*.png
+/test
+
+# Reference designs, dumps, and QA captures
+/figma designs and images refrence only/
+/figma_*.json
+/hero_qa_screenshots/
+/inventory-from-pptx/
+/branding/launch/
+/branding/print/
+/branding/video/
+*4k*
+*-source.jpg
+
+# E2E test runs and captures
+e2e/mobile/
+e2e/watch/
+e2e/**/*.png
+tests/**/*.png
+
+

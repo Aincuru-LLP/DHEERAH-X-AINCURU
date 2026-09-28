@@ -1,0 +1,55 @@
+name: CI
+
+# Fast quality gate on every push + PR: install, typecheck, build.
+# Keeps `main` and the feature branches green. The E2E browser suite runs
+# separately (see e2e.yml) because it needs a live deployment URL.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref to save minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Typecheck & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (tsc --noEmit)
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      - name: Guard — no server secrets leaked into the client bundle
+        run: |
+          if grep -rlE "firebase-admin|RAZORPAY_KEY_SECRET|BREVO_API_KEY" dist/assets/ 2>/dev/null; then
+            echo "::error::A server-only package or secret name leaked into the client bundle."
+            exit 1
+          fi
+          echo "OK — no server SDK/secret in dist/assets."
+
+      - name: Dependency audit (fail on un-allowlisted high/critical)
+        run: node scripts/audit-gate.mjs
+        # `npm audit --audit-level=high` is all-or-nothing: one unfixable
+        # transitive advisory turns CI permanently red, which trains everyone to
+        # ignore it. The gate fails on every high/critical EXCEPT advisories
+        # explicitly allowlisted with a written reason in scripts/audit-gate.mjs.

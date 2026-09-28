@@ -1,0 +1,548 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Sora", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-ui: "Sora", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: "Sora", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Kugile", Georgia, serif;
+  --font-serif: "Kugile", Georgia, serif;
+
+  /* ============================================================ */
+  /*  DHEERAH LUXURY BRAND TOKENS (FIGMA GLOBAL THEME)             */
+  /* ============================================================ */
+
+  /* Dark neutrals */
+  --dheerah-black: #000000;
+  --dheerah-charcoal: #2E2E2E;
+  --dheerah-dark: #1E2022;
+
+  /* Light neutrals — clean luxury white & sand canvas */
+  --dheerah-ivory: #FFFFFF;
+  --dheerah-white: #FFFFFF;
+  --dheerah-cream: #F9F8F6;
+  --dheerah-beige: #E6E1DC;
+  --dheerah-sand: #CBC4BE;
+  --dheerah-sand-light: #E6E1DC;
+  --dheerah-sand-pill: #CBB499;
+
+  /* Brand Accents */
+  --dheerah-red: #C7042B;
+  --dheerah-red-dark: #A30323;
+  --dheerah-terracotta: #C47457;
+  --dheerah-crimson: #C7042B;
+  --dheerah-crimson-dark: #A30323;
+  --dheerah-gold: #CC9E00;
+  --dheerah-gold-light: #E3AF00;
+  --dheerah-gold-dark: #C7042B;
+
+  /* Semantic borders & text */
+  --dheerah-text: #2E2E2E;
+  --dheerah-text-muted: #6B6358;
+  --dheerah-text-light: #8E8A83;
+  --dheerah-border: #E8E4DF;
+  --dheerah-border-soft: #F1ECE6;
+  --dheerah-border-gold: rgba(204, 158, 0, 0.35);
+
+  /* Legacy mappings for components */
+  --color-myntra-pink: #C7042B;
+  --color-myntra-pink-dark: #A30323;
+  --color-myntra-orange: #C47457;
+  --color-myntra-yellow: #CC9E00;
+  --color-myntra-green: #5B7540;
+  --color-myntra-green-light: #7E9B5E;
+  --color-myntra-navy: #000000;
+  --color-myntra-ink: #2E2E2E;
+  --color-myntra-ink-soft: #6B6358;
+  --color-myntra-ink-mute: #8E8A83;
+  --color-myntra-border: #E8E4DF;
+  --color-myntra-border-soft: #F1ECE6;
+  --color-myntra-bg: #FFFFFF;
+  --color-myntra-bg-soft: #F9F8F6;
+  --color-myntra-bg-sale: #FAF4EB;
+  --color-myntra-rating-bg: #5B7540;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes luxuryShimmer {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
+}
+
+@keyframes goldGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(204, 158, 0, 0.2); }
+  50% { box-shadow: 0 0 24px rgba(204, 158, 0, 0.45); }
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes pulseGentle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  html, body {
+    background: var(--dheerah-ivory);
+    color: var(--dheerah-charcoal);
+  }
+  body {
+    font-family: var(--font-body);
+    @apply font-sans antialiased;
+    font-feature-settings: "ss01" on, "cv01" on;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  h4, h5, h6 {
+    font-family: var(--font-ui);
+  }
+  button { cursor: pointer; }
+  input, select, textarea { font-family: inherit; }
+}
+
+/* ───────────── Buttons ───────────── */
+@layer components {
+.btn-primary {
+  background: var(--dheerah-crimson);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 13px;
+  padding: 13px 24px;
+  border-radius: 4px;
+  transition: background 160ms ease, transform 100ms ease, box-shadow 160ms ease;
+  box-shadow: 0 2px 8px rgba(199, 4, 43, 0.2);
+}
+.btn-primary:hover {
+  background: var(--dheerah-crimson-dark);
+  box-shadow: 0 4px 12px rgba(199, 4, 43, 0.28);
+}
+.btn-primary:active { transform: scale(0.99); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+
+.btn-secondary {
+  background: var(--dheerah-black);
+  color: var(--dheerah-ivory);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 13px;
+  padding: 13px 24px;
+  border-radius: 4px;
+  transition: background 160ms ease, transform 100ms ease;
+}
+.btn-secondary:hover { background: var(--dheerah-charcoal); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--dheerah-charcoal);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 13px;
+  padding: 13px 24px;
+  border-radius: 4px;
+  border: 1px solid var(--dheerah-border);
+  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
+}
+.btn-outline:hover {
+  border-color: var(--dheerah-crimson);
+  color: var(--dheerah-crimson);
+  background: rgba(199, 4, 43, 0.04);
+}
+
+.btn-pill-sand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--dheerah-sand);
+  color: #000000;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 12px 28px;
+  border-radius: 9999px;
+  transition: background 180ms ease, transform 120ms ease;
+}
+.btn-pill-sand:hover {
+  background: #B8B0AA;
+  transform: translateY(-1px);
+}
+.btn-pill-sand:active {
+  transform: scale(0.98);
+}
+
+.btn-pill-black {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #000000;
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 14px 32px;
+  border-radius: 9999px;
+  transition: background 180ms ease, transform 120ms ease;
+}
+.btn-pill-black:hover {
+  background: #2E2E2E;
+  transform: translateY(-1px);
+}
+.btn-pill-black:active {
+  transform: scale(0.98);
+}
+
+.btn-gold {
+  background: var(--dheerah-ivory);
+  color: var(--dheerah-charcoal);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 13px;
+  padding: 13px 24px;
+  border-radius: 4px;
+  border: 1px solid var(--dheerah-gold);
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.btn-gold:hover {
+  background: var(--dheerah-cream);
+  border-color: #B38600;
+}
+
+.btn-ghost {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--dheerah-crimson);
+  transition: color 150ms ease;
+}
+.btn-ghost:hover {
+  color: var(--dheerah-crimson-dark);
+  text-decoration: underline;
+}
+
+/* ───────────── Inputs ───────────── */
+.input-box {
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--dheerah-border);
+  border-radius: 3px;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--dheerah-charcoal);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.input-box:focus {
+  border-color: var(--dheerah-crimson);
+  box-shadow: 0 0 0 1px var(--dheerah-crimson);
+}
+.input-box::placeholder { color: var(--dheerah-text-light); }
+
+.input-search {
+  width: 100%;
+  background: var(--dheerah-ivory);
+  border: 1px solid var(--dheerah-border);
+  border-radius: 4px;
+  padding: 11px 16px 11px 42px;
+  font-size: 13px;
+  color: var(--dheerah-charcoal);
+  outline: none;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.input-search:focus {
+  background: #fff;
+  border-color: var(--dheerah-gold);
+  box-shadow: 0 0 0 1px var(--dheerah-gold);
+}
+
+/* ───────────── Cards & Products ───────────── */
+.card-product {
+  background: #fff;
+  position: relative;
+  border-radius: 4px;
+  border: 1px solid rgba(232, 215, 189, 0.45);
+  transition: box-shadow 450ms cubic-bezier(0.16, 1, 0.3, 1), transform 450ms cubic-bezier(0.16, 1, 0.3, 1), border-color 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-product:hover {
+  box-shadow: 0 12px 32px rgba(28, 26, 24, 0.12), 0 2px 8px rgba(204, 158, 0, 0.08);
+  border-color: rgba(204, 158, 0, 0.35);
+  transform: translateY(-3px);
+}
+
+.gold-shimmer-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.gold-shimmer-sheen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-150%) skewX(-20deg);
+  pointer-events: none;
+}
+.gold-shimmer-sheen:hover::after {
+  animation: luxuryShimmer 950ms ease forwards;
+}
+
+.badge-discount {
+  color: var(--dheerah-crimson);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.badge-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--dheerah-border);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dheerah-charcoal);
+  backdrop-filter: blur(2px);
+}
+.badge-rating .star { color: #5B7540; }
+
+.badge-trending {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: var(--dheerah-black);
+  color: var(--dheerah-ivory);
+  border: 1px solid rgba(204, 158, 0, 0.4);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--dheerah-border);
+  background: #fff;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dheerah-charcoal);
+  transition: all 150ms ease;
+}
+.chip:hover {
+  border-color: var(--dheerah-crimson);
+  color: var(--dheerah-crimson);
+}
+.chip-active {
+  border-color: var(--dheerah-crimson);
+  color: var(--dheerah-crimson);
+  background: rgba(199, 4, 43, 0.06);
+  font-weight: 700;
+}
+
+/* ───────────── Section Headings ───────────── */
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(26px, 3.5vw, 40px);
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--dheerah-black);
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* ───────────── Approved Typography Scale (Kugile + Sora) ───────────── */
+.font-display-96 {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 7vw, 96px);
+  font-weight: 400;
+  line-height: 1.0;
+  letter-spacing: -0.01em;
+}
+
+.font-display-40 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.font-sora-64-semibold {
+  font-family: var(--font-ui);
+  font-size: clamp(32px, 5vw, 64px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.font-sora-40-medium {
+  font-family: var(--font-ui);
+  font-size: clamp(26px, 3.5vw, 40px);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.font-sora-36-semibold {
+  font-family: var(--font-ui);
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.font-sora-24-medium {
+  font-family: var(--font-ui);
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.font-sora-24-regular {
+  font-family: var(--font-body);
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.font-sora-18-semibold {
+  font-family: var(--font-ui);
+  font-size: clamp(16px, 1.8vw, 18px);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.font-sora-16-medium {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.font-sora-14-semibold {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.font-sora-14-medium {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.font-sora-14-regular {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dheerah-crimson);
+}
+
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--dheerah-gold), transparent);
+  opacity: 0.45;
+}
+
+/* ───────────── Tiny Utilities ───────────── */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none; }
+
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+.tap-scale {
+  @apply active:scale-95 transition-transform duration-100;
+}
+
+/* Strike-through MRP */
+.mrp { color: var(--dheerah-text-light); text-decoration: line-through; font-weight: 500; }
+
+/* Color swatch */
+.swatch-dot {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  outline: 1px solid var(--dheerah-border);
+}
+
+/* Animated marquee for ticker */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track { animation: marquee 28s linear infinite; }
+
+/* Mobile editorial slide 2 exact framing matching Figma Mobile Frame 315 */
+.editorial-garden-mobile-image {
+  object-fit: cover;
+  object-position: 47% 0%;
+  transform-origin: 47% 0%;
+  transform: scale(1.14);
+}
+
+}
+

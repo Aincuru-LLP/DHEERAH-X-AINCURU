@@ -1,0 +1,343 @@
+# Filling the store
+
+Two ways in, both landing in the same place: **Admin → Products → Add Product**
+for one piece at a time, or the spreadsheet below for a whole shelf at once.
+
+Either way, a product with no photograph is saved as a **Draft** — priced,
+stocked, barcoded and sellable at the counter, but not on the website. Adding
+the photograph is what publishes it.
+
+---
+
+## A batch at a time, in the admin console
+
+**Admin → Products → Add batch.** A grid, one row per piece — a whole delivery
+in one pass, mixed categories and all.
+
+Each row carries its **own category and subcategory**, so laces, a saree and a
+lehenga can arrive in the same batch. The panel at the top (brand, category,
+sub category, material, supplier, sold as) fills only what a row leaves blank,
+which is what makes forty lines of one supplier's trims quick without making a
+mixed delivery awkward.
+
+Per row: **name**, category, sub category, supplier code, cost, **price**, MRP,
+stock, sold-as. Name and price are the only two required — everything else has
+a default or is optional.
+
+**Paste from a spreadsheet** takes columns straight out of Excel. Keep the
+header row and the column ORDER does not matter: `Product Name`, `Category`,
+`Sub Category`, `Supplier Code`, `Buying Price`, `Selling Price`, `MRP`,
+`Stock` are all matched by name, and columns we do not want are ignored. With
+no header row the order is assumed to be name, category, sub category, price,
+MRP, stock.
+
+On save each row becomes a **Draft with its own barcode**, and the next screen
+lists the batch with its codes and a **Print labels** button — labels for
+exactly the pieces just entered, not for whatever an Inventory filter happens
+to show.
+
+What is deliberately *not* collected: the photograph and the description. Those
+are the only two things left per piece, and adding the photo is what publishes
+it.
+
+---
+
+## One at a time, in the admin console
+
+**Admin → Products → Add Product.** Fill brand, name, description, category,
+price, MRP and stock. **Leave Main Photo empty** and save.
+
+* A barcode is allocated automatically — TC00001, TC00002, … from the same
+  series the spreadsheet import and the command line draw from, so no two
+  pieces can ever carry the same code.
+* Print it from **Inventory → Print labels**.
+* The piece shows under **Products → Waiting for photos** until it is shot.
+* Open it, upload the photo: the listing status flips to *On the website* in
+  front of you, and saving publishes it. (Change it back with the same control
+  if you would rather hold it.)
+
+The barcode and status live together in the editor's **Publishing & Barcode**
+section, with a preview of the actual symbol that will print.
+
+Got a backlog of products with no barcode — a catalogue that predates all this?
+**Inventory → Generate barcodes (n)** does the lot. It only ever fills gaps;
+an existing barcode is never changed, because it is already on a printed label.
+
+---
+
+## Printing a batch of labels
+
+**Admin → Inventory.** The usual order, once a batch of products is in:
+
+1. **Narrow the list.** Search, or the stock / category / listing filters.
+   Filtering to **Drafts** is the natural way to find everything just added.
+2. **Generate barcodes (n)** if any of them lack one.
+3. **Tick the ones you want.** The header checkbox takes everything currently
+   shown — never more, so a "select all" cannot quietly reach past the filter.
+   Ticks are held by product id, so they survive changing the filter: tick five
+   laces, switch to Sarees, tick three more, print all eight.
+4. **Choose how many of each.** *1 label each* replaces a scuffed tag;
+   *1 per unit in stock* is what a receiving session wants, because a barcode
+   identifies the product but a tag goes on a piece — five reels of one lace
+   need five tags carrying the same code.
+5. **Print labels (n).**
+
+The line under the toolbar always says what is about to happen: how many are
+selected (or that everything shown will print), how many labels that is, how
+many A4 sheets, and how many products were skipped for having no barcode. Tick
+nothing and it prints the whole filtered list, which is the quick path for a
+freshly imported shelf.
+
+---
+
+## Adding a category
+
+A master category lives in **two** places, and both are code:
+
+1. `MasterCategory` in `src/types.ts` — the union. Adding a name here makes
+   TypeScript demand the rest, which is the point: a category that is half
+   added cannot compile.
+2. `src/constants.ts` — `CATEGORIES`, `MASTER_CATEGORIES` (the same list twice,
+   for the admin form and the storefront), `MASTER_CATEGORY_TREE` (its curated
+   subcategory vocabulary — an empty `[]` is fine) and `MASTER_CATEGORY_TILES`
+   (colour and tagline for the home-page tile).
+
+Then run `python3 scripts/sync-workbook-categories.py`, which pushes the list
+into the Master Category dropdown in both catalogue workbooks. This is not
+optional: Excel **blocks** a value that is not on the dropdown's list, so a
+category the site accepts would be rejected by the spreadsheet, and nobody finds
+out until they are halfway through typing a delivery.
+
+**No Firestore rules change is needed.** The rules require `masterCategory` and
+`category` to be present and say nothing about their values — deliberately, so
+the vocabulary can move at the speed of the shop rather than the speed of a
+rules deploy.
+
+What happens next, on its own:
+
+* The category appears **immediately** in Products → Add Product, in the batch
+  grid's per-row dropdown, and in the batch defaults panel.
+* It appears in the **navbar, the home tiles and the shop filters only once a
+  live product uses it** (`masterCategoriesFor`, `src/lib/subcategories.ts`).
+  A section with nothing in it is a menu link that lands on an empty page, and
+  a category is always declared long before its first piece is photographed.
+* Its subcategories in the shopper menus come from the catalogue, not from
+  `MASTER_CATEGORY_TREE` — the tree only decides the ORDER of names that have
+  stock. A name typed into a product that the tree never heard of still shows.
+* The home page's **Lookbook** rail is derived the same way (`src/lib/lookbook.ts`):
+  one card per subcategory that has a live product, fronted by that shelf's
+  best-photographed piece, using that piece's own description. Nothing about it
+  is written by hand, so it can never advertise something the shop does not
+  stock. It hides itself below three cards.
+* `public/sitemap.xml` lists a handful of category URLs by hand
+  (`scripts/build-sitemap.ts`). Add the new one there **after** it has products,
+  not before — offering Google an empty page is worse than not offering it.
+
+### One name, one place
+
+A name must not be both a category and somebody's subcategory. *Half Saree* was
+briefly both — a category of its own and `Half Sarees` under Sarees — and that
+is one piece filed in two places, so a shopper meets two half-empty shelves and
+neither is wrong enough to notice. Promoting a name to a category means removing
+it from the tree it came from, and moving the products with it:
+
+```bash
+# Look first — this writes nothing.
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=demo-tresor \
+  npx tsx scripts/reclassify-products.ts \
+    --from "Sarees/Half Sarees" --to "Half Saree/Langa Voni" --dry-run
+
+# Then for real.
+GOOGLE_APPLICATION_CREDENTIALS=/path/key.json \
+  npx tsx scripts/reclassify-products.ts \
+    --from "Sarees/Half Sarees" --to "Half Saree/Langa Voni" --prod
+```
+
+It changes the category and nothing else — id, barcode, price, photograph and
+listing status are untouched, so **labels already printed and stuck on pieces
+stay valid**. A barcode identifies the piece, not the shelf it sits on.
+
+For a handful of products the admin console is quicker: Inventory → filter to the
+old category → open each one → change Category. The script exists for when it is
+not a handful.
+
+---
+
+# From a spreadsheet
+
+Register the whole catalogue — category, subcategory, pricing, stock — from one
+Excel sheet, get a barcode for every product, and print the labels. Photographs
+can come later; nothing here waits for them.
+
+---
+
+## The short version
+
+```bash
+# 1. Excel -> JSON  (Python, because reading .xlsx needs openpyxl)
+python3 scripts/catalogue-xlsx-to-json.py my-catalogue.xlsx -o import.json
+
+# 2. Check it without writing anything
+GOOGLE_APPLICATION_CREDENTIALS=/path/key.json \
+  npx tsx scripts/import-catalogue.ts import.json --prod --dry-run
+
+# 3. Import for real (this also barcodes every product)
+GOOGLE_APPLICATION_CREDENTIALS=/path/key.json \
+  npx tsx scripts/import-catalogue.ts import.json --prod
+```
+
+Then: **Admin → Inventory → Print labels**.
+
+Rehearse on the emulator first — same commands, without `--prod`:
+
+```bash
+npm run emulators                       # in one terminal
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 GCLOUD_PROJECT=demo-tresor \
+  npx tsx scripts/import-catalogue.ts import.json
+```
+
+---
+
+## The sheet
+
+Start from **`docs/ops/tresor-catalogue-TEMPLATE.xlsx`**, Catalogue sheet.
+`docs/ops/tresor-catalogue-SAMPLE.xlsx` is the same sheet filled with the 50
+products already live, if you want to see it populated.
+
+Columns are matched by **header name**, so you can reorder them, hide the ones
+you do not use, or add your own — only the names below are read.
+
+| Column | Required | Notes |
+|---|---|---|
+| **Product ID** | yes | The key. Letters, digits, `.`, `-`, `_`, up to 64 characters. A new ID creates a product; an existing ID updates it. It is also the product's web address, so keep it readable: `lc-zardozi-sage`, not `p1`. |
+| **Product Name** | yes | What the customer sees. |
+| **Master Category** | yes | One of the names in the dropdown. See "Adding a category" below. |
+| Sub Category / Design | no | Free text. A new name appears in the menus on its own — but check the spelling, because a typo quietly creates a second, near-empty subcategory. |
+| **Selling Price (₹)** | yes | Must be greater than zero. |
+| MRP (₹) | no | Defaults to the selling price. May not be *below* it — that would print a negative discount. |
+| Buying Price (₹) | no | Cost, for margin reporting. Never shown to customers. |
+| Stock Qty | no | Whole units. Missing means zero, and zero means "sold out" on the site. |
+| Unit Type | no | `unit`, `per meter` or `bundle`. |
+| Bundle (m) | no | Metres in one bundle. |
+| Description | no | Two or three real sentences — this is the product page copy and what Google indexes. **A blank cell never erases existing copy.** |
+| Image URL | no | See below. |
+| Listing Status | no | `Active`, `Draft` or `Retired`. Blank means Active. |
+| Live on Site | no | `No` is shorthand for Draft. Listing Status wins if both are set. |
+| Supplier Code, Supplier, HSN Code, GST Rate, Material, Reorder Lvl, Photo Quality, Sticker | no | Recorded as given. |
+
+Everything else on the sheet (Margin %, Stock Status, Stock per Log, Log Match,
+the Photo thumbnail) is calculated for you and is ignored by the import.
+
+---
+
+## No photographs yet? That is the normal case
+
+**A row with no Image URL is imported as a Draft.** The product is fully real —
+it has stock, a barcode, a counter price, and it appears in Admin → Inventory —
+but no shopper sees it, and it stays out of the sitemap so Google is never
+offered a page that is not ready.
+
+That is what lets you register the entire store this week and publish each piece
+the day it is photographed. To publish:
+
+* **One at a time:** Admin → Inventory → the **Listing** column → *On the
+  website*. (Filter the list to **Drafts** to see only what is waiting.)
+* **In bulk:** put the photo URLs in the sheet, set Listing Status to `Active`,
+  and import again.
+
+A generated fabric swatch stands in for the photograph in the meantime, so
+nothing renders broken in the admin console.
+
+If you genuinely want unphotographed pieces on the website, pass
+`--publish-without-photos`.
+
+---
+
+## What the import will and will not do
+
+**It will not delete anything.** A product that is not in your sheet is left
+exactly as it is. "Not in this spreadsheet" is not the same statement as "no
+longer sold".
+
+**A blank cell means "leave it alone", not "erase it".** Only the columns you
+actually fill are written. So a sheet with nothing but Product ID and Stock Qty
+is a safe stock update, and the descriptions written by hand survive it.
+
+**Nothing is written if any row is wrong.** The run stops and prints the row
+numbers. A half-imported catalogue is the hardest state to recover from, so it
+is never created.
+
+**Every product ends up with a barcode.** `TC00001`, `TC00002`, … assigned in
+order, and a product keeps its barcode forever — re-importing never renumbers
+anything. Pass `--no-barcodes` to skip that step.
+
+---
+
+## Reading the output
+
+**ERRORS stop the import.** Duplicate Product IDs, an unknown Master Category, a
+missing name or price, an MRP below the selling price, a negative or fractional
+stock count, a value not in one of the dropdown lists.
+
+**WARNINGS import, but are worth reading.** The ones that matter most:
+
+* *No Image URL — imported as Draft.* Expected while you are filling the store.
+* *Sub Category "X" is new.* Fine if deliberate; a typo if not.
+* *GST Rate 18% is recorded but NOT yet applied.* The rate is stored on the
+  product, but checkout and the tax invoice still charge the site-wide 5% until
+  the per-product rates are wired in — which is waiting on the CA confirming the
+  rate per category. **Do not treat a rate in this column as being charged.**
+* *N products share one description.* Search engines collapse near-identical
+  pages, so those products compete with each other.
+* *Buying price is not below the selling price.* That piece makes no margin.
+
+---
+
+## After the import
+
+1. **Print one label and scan it** before printing the rest. The barcodes are
+   generated in-house (Code 128-B, no third-party library), and a scanner
+   disagreeing with the encoder is the one failure that unit tests cannot rule
+   out.
+2. Admin → Inventory → **Print labels** prints whatever the current search,
+   stock, category and listing filters show — filter first, then print.
+3. `npx tsx scripts/build-sitemap.ts` regenerates the sitemap. Drafts are
+   excluded automatically.
+
+---
+
+## Files
+
+| Path | What it is |
+|---|---|
+| `scripts/catalogue-xlsx-to-json.py` | Excel → JSON. Deliberately dumb: it reads cells, nothing more. |
+| `scripts/import-catalogue.ts` | Validation, mapping and the Firestore write. Every domain rule lives here, where it can read the real category tree. |
+| `scripts/lib/barcodes.ts` | The barcode numbering rule, shared with `assign-barcodes.ts`. |
+| `scripts/assign-barcodes.ts` | Barcodes on their own, for a catalogue that predates the counter. |
+| `scripts/reclassify-products.ts` | Moves products between categories when the taxonomy changes. |
+| `scripts/sync-workbook-categories.py` | Pushes the category list from the code into the workbook dropdowns. |
+| `src/lib/barcodeAssign.ts` | The in-app allocator. Increments `counters/barcodes` in a transaction, so two admins clicking save at the same moment cannot get the same number. |
+| `docs/ops/tresor-catalogue-TEMPLATE.xlsx` | The sheet to fill. |
+| `docs/ops/tresor-catalogue-SAMPLE.xlsx` | The same sheet, filled, with a month of stock and orders. |
+
+---
+
+## Firestore rules deploy separately from the app
+
+Pushing code deploys the website to Vercel. It does **not** deploy
+`firestore.rules` — those live in Firebase and need their own push:
+
+```bash
+npx firebase-tools deploy --only firestore:rules --project tresor-couture
+```
+
+Or paste the contents of `firestore.rules` into
+**Firebase Console → Firestore Database → Rules → Publish**.
+
+Do this whenever `firestore.rules` changes in a release. The current file adds
+`counters/*` (admin-only), which is where barcode numbers are handed out.
+
+Until it is deployed, barcode allocation still works — it falls back to reading
+the highest number off the products themselves and verifies the result is
+unused before returning it. The only thing lost is the transaction that would
+serialise two people clicking "Generate barcode" in the same instant.

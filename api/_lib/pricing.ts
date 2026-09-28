@@ -1,0 +1,172 @@
+/**
+ * AUTHORITATIVE server-side pricing.
+ *
+ * This is the single source of truth for what a customer owes. It reads
+ * product prices and coupon definitions straight from Firestore via the Admin
+ * SDK — the client-supplied cart only contributes product ids, quantities and
+ * an optional coupon CODE. Amounts, discounts, tax and shipping are ALL
+ * recomputed here so a tampered client total can never be trusted.
+ *
+ * Prices are tax-inclusive ("inclusive of all taxes" per product pages and
+ * terms). The 5% GST is reported as a component of the inclusive price but is
+ * not added again to the total. Free shipping >= ₹1999 else ₹99; COD adds ₹50.
+ */
+import type { Firestore } from 'firebase-admin/firestore';
+
+export const COD_SURCHARGE = 50;
+export const FREE_SHIPPING_THRESHOLD = 1999;
+export const FLAT_SHIPPING = 99;
+export const GST_RATE = 0.05;
+
+export interface CartLineInput {
+  fabricId: string;
+  quantity: number;
+  color?: string;
+  size?: string;
+}
+
+export interface PricedLine extends CartLineInput {
+  price: number;
+  lineTotal: number;
+  /** Units available at compute time, if the product tracks stock. */
+  stock?: number;
+}
+
+export interface PriceBreakdown {
+  lines: PricedLine[];
+  subtotal: number;
+  couponCode?: string;
+  couponDiscount: number;
+  taxable: number;
+  tax: number;
+  shipping: number;
+  codSurcharge: number;
+  /** Grand total in rupees (integer). */
+  total: number;
+  /** Total in the smallest currency unit (paise) for Razorpay. */
+  amountMinor: number;
+  currency: 'INR';
+}
+
+function readPrice(data: Record<string, unknown>, size?: string): number {
+  if (size && Array.isArray(data.sizes)) {
+    const matched = data.sizes.find(
+      (s: Record<string, unknown>) => s && (s.name === size || s.id === size)
+    );
+    if (matched && typeof matched.price === 'number' && isFinite(matched.price) && matched.price > 0) {
+      return matched.price;
+    }
+  }
+  // Defensive: read the per-unit price without depending on src/types.ts.
+  const p = data.price;
+  if (typeof p === 'number' && isFinite(p) && p >= 0) return p;
+  throw new Error('product_price_unavailable');
+}
+
+function readStock(data: Record<string, unknown>): number | undefined {
+  const s = data.stock;
+  return typeof s === 'number' && isFinite(s) ? s : undefined;
+}
+
+/**
+ * Compute the authoritative breakdown. `paymentMethod` only affects the COD
+ * surcharge; `channel` distinguishes a web order from a counter sale. Throws on
+ * unknown product, bad quantity, or unreadable price.
+ *
+ * `channel` is a PARAMETER rather than an adjustment the caller makes
+ * afterwards, because the invariant `total = taxable + shipping + codSurcharge`
+ * — and `amountMinor` derived from it — has to hold in one file. A handler that
+ * zeroed shipping on its own would be a second, silent pricing implementation.
+ */
+export async function computeBreakdown(
+  db: Firestore,
+  input: {
+    items: CartLineInput[];
+    couponCode?: string;
+    paymentMethod?: 'card' | 'upi' | 'cod';
+    /** 'in-store' is a counter sale: nothing is shipped and nothing is
+     *  collected on delivery, so both charges are zero. Defaults to 'web', so
+     *  every existing caller keeps its behaviour byte for byte. */
+    channel?: 'web' | 'in-store';
+  },
+): Promise<PriceBreakdown> {
+  if (!Array.isArray(input.items) || input.items.length === 0) {
+    throw new Error('empty_cart');
+  }
+
+  const lines: PricedLine[] = [];
+  for (const raw of input.items) {
+    const quantity = Number(raw.quantity);
+    if (!raw.fabricId || !isFinite(quantity) || quantity <= 0) {
+      throw new Error('invalid_line');
+    }
+    const snap = await db.collection('products').doc(String(raw.fabricId)).get();
+    if (!snap.exists) throw new Error(`unknown_product:${raw.fabricId}`);
+    const data = (snap.data() ?? {}) as Record<string, unknown>;
+    const price = readPrice(data, raw.size);
+    lines.push({
+      fabricId: String(raw.fabricId),
+      quantity,
+      color: raw.color,
+      size: raw.size,
+      price,
+      lineTotal: Math.round(price * quantity),
+      stock: readStock(data),
+    });
+  }
+
+  const subtotal = lines.reduce((s, l) => s + l.price * l.quantity, 0);
+
+  // Coupon — looked up by document id (uppercased code), same as the client.
+  let couponDiscount = 0;
+  let appliedCode: string | undefined;
+  if (input.couponCode) {
+    const code = input.couponCode.toUpperCase();
+    const cSnap = await db.collection('coupons').doc(code).get();
+    if (cSnap.exists) {
+      const cd = (cSnap.data() ?? {}) as {
+        active?: boolean;
+        kind?: 'percent' | 'flat';
+        value?: number;
+        minSubtotal?: number;
+        maxDiscount?: number;
+        expiresAt?: string;
+      };
+      const valid =
+        cd.active &&
+        (!cd.expiresAt || new Date(cd.expiresAt).getTime() > Date.now()) &&
+        (!cd.minSubtotal || subtotal >= cd.minSubtotal);
+      if (valid) {
+        couponDiscount =
+          cd.kind === 'percent'
+            ? Math.min(cd.maxDiscount ?? Infinity, Math.round(subtotal * ((cd.value ?? 0) / 100)))
+            : cd.value ?? 0;
+        appliedCode = code;
+      }
+    }
+  }
+
+  const taxable = Math.max(0, subtotal - couponDiscount);
+  // Tax-inclusive pricing: report the GST component, do not add it again.
+  const tax = Math.round((taxable * GST_RATE) / (1 + GST_RATE));
+  // A counter sale is handed over across the counter: no carriage, and no
+  // cash-on-delivery to surcharge.
+  const inStore = input.channel === 'in-store';
+  const shipping = inStore ? 0 : taxable >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING;
+  const codSurcharge = !inStore && input.paymentMethod === 'cod' ? COD_SURCHARGE : 0;
+  const total = taxable + shipping + codSurcharge;
+
+  return {
+    lines,
+    subtotal,
+    couponCode: appliedCode,
+    couponDiscount,
+    taxable,
+    tax,
+    shipping,
+    codSurcharge,
+    total,
+    amountMinor: Math.round(total * 100),
+    currency: 'INR',
+  };
+}

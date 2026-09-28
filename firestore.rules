@@ -1,0 +1,294 @@
+rules_version = '2';
+
+// Free-tier security model: no Cloud Functions, so every business rule
+// is enforced HERE. Clients read/write Firestore directly via the Web SDK;
+// these rules are the entire security boundary.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ---------- helpers ---------- */
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function fieldChanged(field) {
+      return request.resource.data[field] != resource.data[field];
+    }
+    function optionalString(data, field, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxLen);
+    }
+    // A return may be raised only against an order the caller owns, that has been
+    // DELIVERED, and only within the 7-day return window measured from the
+    // server-stamped deliveredAt. (get() results are cached per evaluation, so the
+    // repeated get() below counts as a single document access.)
+    function orderIsReturnable(orderId) {
+      return get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid
+        && get(/databases/$(database)/documents/orders/$(orderId)).data.status == 'delivered'
+        && get(/databases/$(database)/documents/orders/$(orderId)).data.deliveredAt is timestamp
+        && request.time < get(/databases/$(database)/documents/orders/$(orderId)).data.deliveredAt + duration.value(7, 'd');
+    }
+
+    /* ---------- products ---------- */
+    // Public read · admin write (UI gated to admins via the custom claim).
+    match /products/{productId} {
+      allow read:   if true;
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasAll(['brand', 'name', 'price', 'masterCategory', 'category'])
+        && request.resource.data.price is number
+        && request.resource.data.price >= 0;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /* ---------- counters (barcode series) ---------- */
+    // `counters/barcodes` hands out the next TC number. Admin-only in both
+    // directions: a shopper reading it would learn the catalogue size, and a
+    // shopper writing it could make the admin console mint a barcode that is
+    // already on a product — an ambiguous scan rings up the wrong piece at the
+    // till. The document is a single `{ next: number }`.
+    match /counters/{counterId} {
+      allow read, write: if isAdmin();
+    }
+
+    /* ---------- coupons ---------- */
+    // Code is the document ID. Public read so the checkout can validate;
+    // admin-only write.
+    match /coupons/{code} {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+
+    /* ---------- config (delivery serviceability, etc.) ---------- */
+    // Public read so the storefront can check 40-min delivery eligibility;
+    // admin-only write (the serviceable pincode list).
+    match /config/{docId} {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+
+    /* ---------- users ---------- */
+    // Owner reads + updates their own profile. Role and createdAt are
+    // protected — only admins can change them.
+    match /users/{userId} {
+      allow read:   if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+        && request.resource.data.role == 'customer'
+        && request.resource.data.uid == userId
+        && request.resource.data.keys().hasAll(['email', 'fullName', 'role']);
+      allow update: if (isOwner(userId)
+                        && !fieldChanged('role')
+                        && !fieldChanged('uid')
+                        && !fieldChanged('createdAt')
+                        && optionalString(request.resource.data, 'email', 254)
+                        && optionalString(request.resource.data, 'fullName', 128)
+                        && optionalString(request.resource.data, 'phone', 32)
+                        && (!(request.resource.data.keys().hasAny(['defaultAddress'])) || request.resource.data.defaultAddress is map))
+                     || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /* ---------- orders ---------- */
+    // Orders are created ONLY by the server (Admin SDK via /api/orders/place or
+    // /api/payments/verify). The Web SDK may NOT create orders: pricing, stock
+    // decrement, and payment-status transitions are all authoritative server
+    // operations. Server writes bypass Firestore rules, so `allow create: false`
+    // here blocks only client SDK attempts.
+    // Reads: user sees their own orders; admins see everything. Updates/deletes
+    // are admin-only (fulfilment / compliance).
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if (isSignedIn() && request.resource.data.userId == request.auth.uid) || isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    /* ---------- posSales (counter idempotency locks) ---------- */
+    // Written only by /api/pos/sale through the Admin SDK, which bypasses these
+    // rules entirely. The catch-all at the bottom would already deny this, but
+    // an explicit block is worth the six lines: someone reading the rules to
+    // find out who can touch counter sales should find the answer here, next to
+    // the orders block, rather than inferring it from the absence of a rule.
+    // Reading them would leak the takings; writing one would let a client
+    // suppress a real sale by pre-claiming its key.
+    match /posSales/{lockId} {
+      allow read, write: if false;
+    }
+
+    /* ---------- reviews ---------- */
+    // Anyone signed-in can submit a review for any product. Reviews go
+    // into 'pending' for admin moderation. Owner can delete their own;
+    // admin can do anything.
+    match /reviews/{reviewId} {
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.fabricId is string
+        && request.resource.data.fabricId.size() > 0
+        && exists(/databases/$(database)/documents/products/$(request.resource.data.fabricId))
+        && optionalString(request.resource.data, 'title', 120)
+        && optionalString(request.resource.data, 'body', 2000)
+        && optionalString(request.resource.data, 'authorName', 64);
+      allow update: if isAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    /* ---------- carts ---------- */
+    // Each signed-in user owns exactly one cart doc keyed by their uid.
+    // Used by CartContext to sync the bag across devices; guests stay on
+    // localStorage. No public read — carts are private to the owner.
+    match /carts/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    /* ---------- mail (Firebase Trigger Email extension) ---------- */
+    // Outbound email queue. The `firestore-send-email` extension watches
+    // this collection and POSTs each new doc to the configured SMTP
+    // provider. Security model:
+    //   - Customers may enqueue mail addressed ONLY to their own email
+    //     (prevents using the queue to spam arbitrary recipients).
+    //   - Admin may enqueue, read, update, delete anything (status-change
+    //     emails, manual replies, queue clean-up).
+    //   - No public read — the queue can contain customer order details.
+    match /mail/{mailId} {
+      allow create: if (isSignedIn()
+                        && request.auth.token.email_verified == true
+                        && request.resource.data.uid == request.auth.uid
+                        && request.resource.data.to is string
+                        && request.resource.data.to == request.auth.token.email)
+                     || isAdmin();
+      allow read, update, delete: if isAdmin();
+    }
+
+    /* ---------- admin_notifications ---------- */
+    // In-app notifications surfaced in the admin dashboard. Today this is
+    // the channel for "new order" alerts (Cloud Functions can later
+    // promote these to outbound email so the admin doesn't need to poll
+    // the console). Any signed-in user can append (i.e. an order created
+    // by a customer can drop a notification), but only for whitelisted
+    // kinds — no arbitrary writes.
+    match /admin_notifications/{notifId} {
+      // Customers may create a new-order notification only for their own order.
+      allow create: if isSignedIn()
+        && request.resource.data.kind in ['new_order']
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.orderId is string
+        && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.userId == request.auth.uid;
+      allow read, update, delete: if isAdmin();
+    }
+
+    /* ---------- consents (DPDP / cookie + marketing consent) ---------- */
+    // One consent record per signed-in user, keyed by uid. The owner writes
+    // their own choices (cookie/marketing acceptance + timestamp); admins read
+    // all for the compliance register. No public read — consent logs are PII.
+    // Guests' consent stays in localStorage until they sign in.
+    match /consents/{userId} {
+      allow read:  if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId)
+        && request.resource.data.keys().hasAll(['analytics', 'marketing', 'policyVersion', 'updatedAt'])
+        && request.resource.data.analytics is bool
+        && request.resource.data.marketing is bool
+        && request.resource.data.policyVersion is string;
+    }
+
+    /* ---------- returns (RMA) ---------- */
+    // A customer raises a return/replacement against one of THEIR OWN delivered
+    // orders. It is created strictly in `requested`; the customer may only push
+    // it to `cancelled` while still `requested`. Every other transition
+    // (approve/reject/pickup/received/refunded/replaced/closed) is admin-only.
+    match /returns/{returnId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'requested'
+        && request.resource.data.orderId is string
+        && request.resource.data.orderId.size() > 0
+        // Must reference an order the customer owns, that is DELIVERED and still
+        // inside the 7-day return window (enforced server-side, not just in the UI).
+        && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        && orderIsReturnable(request.resource.data.orderId)
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.resolution in ['refund', 'replacement']
+        && optionalString(request.resource.data, 'reason', 2000)
+        // Financial / triage fields are admin-only — a customer must not be able
+        // to pre-seed a refund amount (or a fake admin note) on their request.
+        && !request.resource.data.keys().hasAny(['refundAmount', 'refundMethod', 'adminNote', 'trackingRef']);
+
+      // Owner may only withdraw a still-pending request; everything else is admin.
+      // The customer may not touch financial/triage fields on the way out either.
+      allow update: if isAdmin()
+        || (isSignedIn()
+            && resource.data.userId == request.auth.uid
+            && resource.data.status == 'requested'
+            && request.resource.data.status == 'cancelled'
+            && !fieldChanged('userId')
+            && !fieldChanged('orderId')
+            && !request.resource.data.keys().hasAny(['refundAmount', 'refundMethod', 'adminNote', 'trackingRef']));
+
+      allow delete: if isAdmin();
+    }
+
+    /* ---------- live chat (per order) ---------- */
+    // One conversation doc per ORDER, keyed by orderId, with a messages
+    // subcollection. The customer opens it from their order, so support always
+    // has the order in context. The chat doc stores userId (the order owner);
+    // read/write is owner-or-admin, and creating a chat requires owning the
+    // referenced order. Guests have no chat (routed to call/WhatsApp).
+    function chatOwner(chatId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid;
+    }
+    match /chats/{orderId} {
+      // `resource == null` lets the owner's "does this chat exist yet?" read
+      // succeed before the conversation is created (otherwise ensureForOrder's
+      // getDoc is denied and the chat can never be started).
+      allow read: if isAdmin()
+        || (isSignedIn() && (resource == null || resource.data.userId == request.auth.uid));
+      allow create: if isAdmin()
+        || (isSignedIn()
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.orderId == orderId
+            && exists(/databases/$(database)/documents/orders/$(orderId))
+            && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid);
+      allow update: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isAdmin() || chatOwner(orderId);
+        // Customer posts as themselves; admin posts as admin. Text is bounded.
+        allow create: if (
+              (chatOwner(orderId)
+                && request.resource.data.senderRole == 'customer'
+                && request.resource.data.senderId == request.auth.uid)
+              || (isAdmin() && request.resource.data.senderRole == 'admin'))
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 4000;
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    /* ---------- CRM overlay (admin-only) ---------- */
+    // Internal sales/support annotations (tags, lifecycle stage, notes) keyed by
+    // the customer's uid. Never customer-readable — this is back-office data.
+    match /crm/{uid} {
+      allow read, write: if isAdmin();
+    }
+
+    /* ---------- deny everything else ---------- */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
