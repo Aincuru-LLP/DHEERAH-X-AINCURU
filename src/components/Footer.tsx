@@ -151,6 +151,56 @@ const Footer: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Creative Signature Strip — Designed by AINCURU */}
+      <div className="border-t border-white/[0.08] bg-[#030303] py-4 md:py-5 px-4 relative overflow-hidden">
+        {/* Subtle ambient terracotta glow */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-40"
+          style={{
+            background: 'radial-gradient(circle at 50% 50%, rgba(224, 92, 43, 0.08) 0%, transparent 75%)',
+          }}
+          aria-hidden="true"
+        />
+
+        <div className="max-w-[1400px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4 relative z-10 text-center sm:text-left">
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E05C2B] animate-pulse" />
+            <span className="text-[11px] tracking-[0.18em] uppercase text-[#78716A] font-medium">
+              Digital Atelier Experience
+            </span>
+          </div>
+
+          <a
+            href="https://aincuru.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 hover:border-[#E05C2B]/60 bg-white/[0.02] hover:bg-white/[0.06] transition-all duration-300 shadow-[0_2px_12px_rgba(0,0,0,0.5)] hover:shadow-[0_4px_24px_rgba(224,92,43,0.22)] no-tap-highlight"
+            title="AINCURU — Context Creates Intelligence"
+            aria-label="Designed by AINCURU (opens in a new tab)"
+          >
+            <span className="text-[11px] tracking-[0.2em] uppercase font-semibold text-[#A8A29E] group-hover:text-[#FAF7F0] transition-colors">
+              Designed by
+            </span>
+            <div className="h-4 w-px bg-white/15 group-hover:bg-[#E05C2B]/50 transition-colors" />
+            <img
+              src="/branding/aincuru-logo-light.png"
+              alt="AINCURU"
+              className="h-5 sm:h-5.5 md:h-6 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+              loading="lazy"
+            />
+            <span className="text-[10px] tracking-[0.12em] text-[#CC9E00]/70 group-hover:text-[#E05C2B] font-mono transition-colors">
+              ↗
+            </span>
+          </a>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10.5px] tracking-[0.14em] text-[#78716A] font-light">
+              Context Creates Intelligence
+            </span>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 };
