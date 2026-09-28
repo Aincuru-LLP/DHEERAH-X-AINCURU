@@ -186,7 +186,7 @@ const Footer: React.FC = () => {
             <img
               src="/branding/aincuru-logo-light.png"
               alt="AINCURU"
-              className="h-5 sm:h-5.5 md:h-6 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]"
+              className="h-6 sm:h-6.5 md:h-7.5 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.03]"
               loading="lazy"
             />
             <span className="text-[10px] tracking-[0.12em] text-[#CC9E00]/70 group-hover:text-[#E05C2B] font-mono transition-colors">
