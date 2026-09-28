@@ -25,6 +25,8 @@ const ALL_NAV: { id: AdminSection; label: string; Icon: React.ComponentType<{ cl
 const NAV = ALL_NAV.filter(item => {
   if (!FEATURES.reviewsAndFeedback && item.id === 'reviews') return false;
   if (!FEATURES.counterSale && item.id === 'counter') return false;
+  if (!FEATURES.bulkEmail && item.id === 'bulk-email') return false;
+  if (!FEATURES.catalogueSeo && item.id === 'seo') return false;
   return true;
 });
 

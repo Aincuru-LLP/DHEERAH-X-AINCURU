@@ -364,19 +364,21 @@ const AdminDashboard: React.FC = () => {
               <Icon className="w-3.5 h-3.5" /> {label}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={handleSeed}
-            disabled={seeding}
-            className="chip hover:border-[color:var(--color-myntra-pink)] hover:text-[color:var(--color-myntra-pink)] transition-colors disabled:opacity-60"
-            title="Push the in-repo FABRICS list into Firestore (idempotent)"
-          >
-            <Database className="w-3.5 h-3.5" />
-            {seeding ? 'Seeding…' : 'Seed catalog from FABRICS'}
-          </button>
+          {FEATURES.seedTools && (
+            <button
+              type="button"
+              onClick={handleSeed}
+              disabled={seeding}
+              className="chip hover:border-[color:var(--color-myntra-pink)] hover:text-[color:var(--color-myntra-pink)] transition-colors disabled:opacity-60"
+              title="Push the in-repo FABRICS list into Firestore (idempotent)"
+            >
+              <Database className="w-3.5 h-3.5" />
+              {seeding ? 'Seeding…' : 'Seed catalog from FABRICS'}
+            </button>
+          )}
         </div>
       </div>
-      {seedMessage && (
+      {FEATURES.seedTools && seedMessage && (
         <div className="bg-white border border-[color:var(--color-myntra-border-soft)] rounded-md px-4 py-3 text-[13px] text-[color:var(--color-myntra-ink)]">
           {seedMessage}
         </div>

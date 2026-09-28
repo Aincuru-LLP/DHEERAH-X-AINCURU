@@ -30,7 +30,8 @@ import { THERMAL_SIZES, downloadThermalLabel, isThermal, thermalById } from '../
 import { CATEGORIES, formatINR } from '../../constants';
 import { toCsv, downloadCsv } from '../../lib/csv';
 import { STANDARD_PRODUCT_SIZES } from '../../lib/productPricing';
-import LACE_SEED from '../../../inventory-from-pptx/inventory_full_seed.json';
+import { FEATURES } from '../../config/features';
+const LACE_SEED: Record<string, unknown>[] = [];
 import type { Fabric } from '../../types';
 import {
   ADMIN_PRODUCT_CATEGORIES,
@@ -2361,13 +2362,15 @@ const AdminProducts: React.FC = () => {
             >
               <Download className="w-4 h-4" /> Export CSV
             </button>
-            <button
-              onClick={() => { setPendingAction('seed-laces'); setActionError(null); setActionSuccess(null); }}
-              className="btn-outline inline-flex items-center justify-center gap-1.5 !py-2.5"
-              title="Seed laces from PPTX catalogue"
-            >
-              <Upload className="w-4 h-4" /> Seed Laces
-            </button>
+            {FEATURES.seedTools && (
+              <button
+                onClick={() => { setPendingAction('seed-laces'); setActionError(null); setActionSuccess(null); }}
+                className="btn-outline inline-flex items-center justify-center gap-1.5 !py-2.5"
+                title="Seed laces from PPTX catalogue"
+              >
+                <Upload className="w-4 h-4" /> Seed Laces
+              </button>
+            )}
             <button
               onClick={() => { setPendingAction('wipe'); setActionError(null); setActionSuccess(null); }}
               className="inline-flex items-center justify-center gap-1.5 !py-2.5 rounded-md font-bold text-white text-[13px] border border-[#F0C7C7] transition-colors disabled:opacity-60"

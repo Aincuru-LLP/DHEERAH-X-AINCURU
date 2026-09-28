@@ -16,4 +16,26 @@ export const FEATURES = {
    * Set to `true` when you want to re-enable it.
    */
   counterSale: false,
+
+  /**
+   * Bulk Email marketing suite.
+   * Set to `false` to hide Bulk Email from the admin navigation and interface.
+   * Set to `true` when you want to re-enable it.
+   */
+  bulkEmail: false,
+
+  /**
+   * Catalogue SEO audit section.
+   * Set to `false` to hide Catalogue SEO from the admin navigation and interface.
+   * Set to `true` when you want to re-enable it.
+   */
+  catalogueSeo: false,
+
+  /**
+   * Seeding utilities (Seed Laces, Seed catalog from FABRICS).
+   * Set to `false` to disable / hide seeding buttons and actions from the admin UI.
+   * Set to `true` when you want to re-enable them.
+   */
+  seedTools: false,
 } as const;
+

@@ -26,6 +26,8 @@ const AdminPage: React.FC<Props> = ({ section = 'dashboard' }) => {
   const activeSection =
     (!FEATURES.reviewsAndFeedback && section === 'reviews') ||
     (!FEATURES.counterSale && section === 'counter') ||
+    (!FEATURES.bulkEmail && section === 'bulk-email') ||
+    (!FEATURES.catalogueSeo && section === 'seo') ||
     section === 'compliance' ||
     section === 'analytics'
       ? 'dashboard'
@@ -45,8 +47,8 @@ const AdminPage: React.FC<Props> = ({ section = 'dashboard' }) => {
         {activeSection === 'support' && <AdminSupport />}
         {activeSection === 'coupons' && <AdminCoupons />}
         {FEATURES.reviewsAndFeedback && activeSection === 'reviews' && <AdminReviews />}
-        {activeSection === 'bulk-email' && <AdminBulkEmail />}
-        {activeSection === 'seo' && <AdminSeo />}
+        {FEATURES.bulkEmail && activeSection === 'bulk-email' && <AdminBulkEmail />}
+        {FEATURES.catalogueSeo && activeSection === 'seo' && <AdminSeo />}
       </AdminLayout>
     </AdminGuard>
   );
