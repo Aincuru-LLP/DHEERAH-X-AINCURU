@@ -53,6 +53,11 @@ const metaFor = (route: Route): { title: string; description: string } => {
     }
     case 'search':
       return { title: `Search: ${route.q} · ${SITE}`, description: `Search results for "${route.q}" in the ${SITE} catalogue.` };
+    case 'our-store':
+      return {
+        title: 'Our Store | Dheerah Designer Boutique',
+        description: 'Visit Dheerah Designer Boutique and experience our collections, custom tailoring, bridal wear and craftsmanship in person.',
+      };
     case 'cart':
       return { title: `Shopping Bag · ${SITE}`, description: `Your ${SITE} shopping bag.` };
     case 'checkout':

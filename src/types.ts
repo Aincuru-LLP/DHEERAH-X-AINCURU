@@ -480,5 +480,7 @@ export type Route =
   | { name: 'admin'; section?: AdminSection }
   | { name: 'admin-brand-kit'; section?: string }
   | { name: 'policy'; policy: PolicyKey }
+  | { name: 'our-store' }
   | { name: 'auth-action'; mode: string; oobCode: string; apiKey?: string; continueUrl?: string }
   | { name: 'not-found'; path?: string };
+

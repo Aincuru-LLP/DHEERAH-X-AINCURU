@@ -42,11 +42,11 @@ const EditorialGallerySection: React.FC = () => {
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full bg-[color:var(--dheerah-ivory)] py-6 sm:py-8 md:py-12 lg:py-14 select-none"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full bg-[color:var(--dheerah-ivory)] py-6 sm:py-8 md:py-10 lg:py-12 select-none"
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Desktop View (md+): Dual Editorial Frames Side-by-Side (Matching Frame 373) */}

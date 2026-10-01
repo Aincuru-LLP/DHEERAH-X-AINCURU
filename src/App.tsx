@@ -35,6 +35,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const SearchResultsPage = lazy(() => import('./pages/SearchResultsPage'));
 const AuthActionPage = lazy(() => import('./pages/AuthActionPage'));
 const LegalPage = lazy(() => import('./pages/LegalPage'));
+const OurStorePage = lazy(() => import('./pages/OurStorePage'));
 import { CartProvider } from './context/CartContext';
 import { OrderProvider } from './context/OrderContext';
 import { WishlistProvider } from './context/WishlistContext';
@@ -156,6 +157,8 @@ const RoutedView: React.FC = () => {
       return <AuthActionPage mode={route.mode} oobCode={route.oobCode} continueUrl={route.continueUrl} />;
     case 'policy':
       return <LegalPage policy={route.policy} />;
+    case 'our-store':
+      return <OurStorePage />;
     case 'not-found':
       return <NotFoundPage />;
   }

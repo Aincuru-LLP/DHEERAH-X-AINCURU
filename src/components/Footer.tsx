@@ -45,6 +45,7 @@ const Footer: React.FC = () => {
       title: 'Company',
       links: [
         { label: 'About Dheerah', to: () => navigate(POLICY_ROUTES['About Dheerah']) },
+        { label: 'Our Store', to: () => navigate({ name: 'our-store' }) },
         { label: 'Terms of Service', to: () => navigate(POLICY_ROUTES['Terms of Service']) },
         { label: 'Privacy Policy', to: () => navigate(POLICY_ROUTES['Privacy Policy']) },
       ]
@@ -52,9 +53,9 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="bg-[#050505] text-[#FAF7F0] mt-12 md:mt-20 border-t border-[#CC9E00]/30">
+    <footer className="bg-[#050505] text-[#FAF7F0] border-t border-[#CC9E00]/30">
       {/* Brand anchor header */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10 pt-12 md:pt-16 pb-8 flex flex-col items-center text-center">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 md:pt-12 pb-6 sm:pb-8 flex flex-col items-center text-center">
         <div className="inline-block bg-[#FAF7F0] px-8 py-3.5 rounded border border-[#CC9E00]/50 mb-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
           <img
             src="/branding/dheerah-logo.png"

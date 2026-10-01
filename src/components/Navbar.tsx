@@ -344,7 +344,7 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300 bg-white">
+      <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300 bg-white box-border overflow-x-hidden">
 
 
         {/* Main navigation tier */}
@@ -355,29 +355,33 @@ const Navbar: React.FC = () => {
             }`}
         >
           <div
-            className={`max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8 xl:px-12 flex items-center gap-4 transition-all duration-300 ${scrolled ? 'h-15 md:h-18' : 'h-18 md:h-22'
-              }`}
+            className={`max-w-[1440px] mx-auto px-2 xs:px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 flex items-center justify-between md:justify-start gap-1 xs:gap-1.5 sm:gap-3 md:gap-4 transition-all duration-300 w-full min-w-0 box-border ${
+              scrolled ? 'h-14 sm:h-15 md:h-18' : 'h-16 sm:h-18 md:h-22'
+            }`}
           >
             {/* Hamburger (mobile) */}
             <button
-              className="lg:hidden p-2 -ml-2 text-[#050505] hover:text-[#C7042B]"
+              className="lg:hidden p-1.5 xs:p-2 -ml-0.5 sm:-ml-1 text-[#050505] hover:text-[#C7042B] shrink-0 flex items-center justify-center rounded-sm touch-manipulation focus:outline-hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Open navigation menu"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
             </button>
 
             {/* Brand Logo */}
             <button
               onClick={() => navigate({ name: 'home' })}
-              className="flex items-center shrink-0 no-tap-highlight hover:opacity-90 transition-opacity"
+              className="flex items-center min-w-0 shrink md:shrink-0 no-tap-highlight hover:opacity-90 transition-opacity justify-start overflow-hidden py-1"
               aria-label="Dheerah Designer Boutique — Home"
             >
               <img
                 src="/branding/dheerah-logo.png"
                 alt="Dheerah Designer Boutique"
-                className={`w-auto select-none object-contain transition-all duration-300 ${scrolled ? 'h-8 sm:h-9 md:h-10' : 'h-9 sm:h-10 md:h-12'
-                  }`}
+                className={`w-auto select-none object-contain transition-all duration-300 max-h-full max-w-[114px] min-[360px]:max-w-[128px] min-[390px]:max-w-[150px] sm:max-w-[180px] md:max-w-none ${
+                  scrolled
+                    ? 'h-6 min-[360px]:h-6.5 min-[390px]:h-7.5 sm:h-9 md:h-10'
+                    : 'h-6.5 min-[360px]:h-7.5 min-[390px]:h-8.5 sm:h-10 md:h-12'
+                }`}
                 loading="eager"
                 draggable={false}
               />
@@ -458,23 +462,23 @@ const Navbar: React.FC = () => {
             </form>
 
             {/* Right Action Icons */}
-            <div className="flex items-center shrink-0 ml-auto gap-1 sm:gap-2">
+            <div className="flex items-center shrink-0 ml-auto gap-0.5 xs:gap-1 sm:gap-2">
               <button
-                className="md:hidden p-2 text-[#050505] hover:text-[#C7042B]"
+                className="md:hidden p-1.5 xs:p-2 sm:p-2.5 text-[#050505] hover:text-[#C7042B] shrink-0 flex items-center justify-center rounded-sm touch-manipulation min-w-[34px] min-h-[34px] xs:min-w-[36px] xs:min-h-[36px] sm:min-w-[40px] sm:min-h-[40px]"
                 onClick={() => setSearchOpen(true)}
                 aria-label="Search"
               >
-                <Search className="w-5 h-5" />
+                <Search className="w-5 h-5 shrink-0" />
               </button>
 
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-0.5 xs:gap-1">
                 {/* Wishlist */}
                 <button
                   onClick={() => navigate({ name: 'account', tab: 'wishlist' })}
-                  className="relative p-2.5 text-[#1C1A18] hover:text-[#C7042B] transition-colors"
+                  className="relative p-1.5 xs:p-2 sm:p-2.5 text-[#1C1A18] hover:text-[#C7042B] transition-colors shrink-0 flex items-center justify-center rounded-sm touch-manipulation min-w-[34px] min-h-[34px] xs:min-w-[36px] xs:min-h-[36px] sm:min-w-[40px] sm:min-h-[40px]"
                   aria-label="Wishlist"
                 >
-                  <Heart className="w-5 h-5" />
+                  <Heart className="w-5 h-5 shrink-0" />
                   <AnimatePresence>
                     {wishIds.length > 0 && (
                       <motion.span
@@ -483,7 +487,7 @@ const Navbar: React.FC = () => {
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.5, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                        className="absolute top-1 right-1 bg-[#C7042B] text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 shadow-sm"
+                        className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-[#C7042B] text-white text-[8px] sm:text-[9px] font-bold rounded-full min-w-[15px] h-[15px] sm:min-w-[16px] sm:h-[16px] flex items-center justify-center px-0.5 sm:px-1 shadow-xs"
                       >
                         {wishIds.length > 9 ? '9+' : wishIds.length}
                       </motion.span>
@@ -494,10 +498,10 @@ const Navbar: React.FC = () => {
                 {/* Bag */}
                 <button
                   onClick={() => navigate({ name: 'cart' })}
-                  className="relative p-2.5 text-[#1C1A18] hover:text-[#C7042B] transition-colors"
+                  className="relative p-1.5 xs:p-2 sm:p-2.5 text-[#1C1A18] hover:text-[#C7042B] transition-colors shrink-0 flex items-center justify-center rounded-sm touch-manipulation min-w-[34px] min-h-[34px] xs:min-w-[36px] xs:min-h-[36px] sm:min-w-[40px] sm:min-h-[40px]"
                   aria-label={`Shopping bag with ${cartCount} item${cartCount > 1 ? 's' : ''}`}
                 >
-                  <ShoppingBag className="w-5 h-5" />
+                  <ShoppingBag className="w-5 h-5 shrink-0" />
                   <AnimatePresence>
                     {cartCount > 0 && (
                       <motion.span
@@ -506,7 +510,7 @@ const Navbar: React.FC = () => {
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.5, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                        className="absolute top-1 right-1 bg-[#C7042B] text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 shadow-sm"
+                        className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-[#C7042B] text-white text-[8px] sm:text-[9px] font-bold rounded-full min-w-[15px] h-[15px] sm:min-w-[16px] sm:h-[16px] flex items-center justify-center px-0.5 sm:px-1 shadow-xs"
                       >
                         {cartCount > 9 ? '9+' : cartCount}
                       </motion.span>
@@ -514,16 +518,16 @@ const Navbar: React.FC = () => {
                   </AnimatePresence>
                 </button>
 
-                {/* Account Menu */}
-                <div ref={accountRef} className="relative">
+                {/* Account Menu / Profile */}
+                <div ref={accountRef} className="relative shrink-0">
                   <button
                     onClick={() => setAccountOpen(v => !v)}
                     aria-haspopup="true"
                     aria-expanded={accountOpen}
-                    className="p-2.5 text-[#1C1A18] hover:text-[#C7042B] transition-colors"
+                    className="p-1.5 xs:p-2 sm:p-2.5 text-[#1C1A18] hover:text-[#C7042B] transition-colors shrink-0 flex items-center justify-center rounded-sm touch-manipulation min-w-[34px] min-h-[34px] xs:min-w-[36px] xs:min-h-[36px] sm:min-w-[40px] sm:min-h-[40px]"
                     aria-label={user ? 'Account menu' : 'Sign in'}
                   >
-                    <User className={`w-5 h-5 ${accountOpen ? 'text-[#C7042B]' : ''}`} />
+                    <User className={`w-5 h-5 shrink-0 ${accountOpen ? 'text-[#C7042B]' : ''}`} />
                   </button>
 
                   <AnimatePresence>
@@ -533,7 +537,7 @@ const Navbar: React.FC = () => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 6, scale: 0.98 }}
                         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute right-0 top-full mt-2 w-60 bg-white border border-[#E8D7BD] shadow-2xl rounded-md py-2 z-[60]"
+                        className="absolute right-0 top-full mt-2 w-60 max-w-[calc(100vw-16px)] bg-white border border-[#E8D7BD] shadow-2xl rounded-md py-2 z-[60]"
                       >
                         {user ? (
                           <>

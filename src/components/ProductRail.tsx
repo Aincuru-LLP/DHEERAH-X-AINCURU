@@ -48,14 +48,14 @@ const ProductRail: React.FC<Props> = ({
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className={bg === 'soft' ? 'bg-[color:var(--dheerah-cream)] py-10 md:py-14' : 'bg-[color:var(--dheerah-ivory)] py-10 md:py-14'}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      className={bg === 'soft' ? 'bg-[color:var(--dheerah-cream)] py-6 sm:py-7 md:py-8 lg:py-10' : 'bg-[color:var(--dheerah-ivory)] py-6 sm:py-7 md:py-8 lg:py-10'}
     >
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10">
-        <div className="flex items-end justify-between mb-5 md:mb-7">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-end justify-between mb-4 sm:mb-5 md:mb-6">
           <div>
             {eyebrow && <span className="section-eyebrow">{eyebrow}</span>}
             <h2 className="font-serif text-2xl md:text-3xl lg:text-4xl font-normal text-[color:var(--dheerah-charcoal)] mt-1">{title}</h2>

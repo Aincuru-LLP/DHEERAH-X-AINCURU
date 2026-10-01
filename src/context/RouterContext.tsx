@@ -67,6 +67,8 @@ const parsePath = (raw: string): Route => {
       const section = ADMIN_SECTIONS.find(s => s === raw);
       return { name: 'admin', section };
     }
+    case 'our-store':
+      return { name: 'our-store' };
     case 'about':
     case 'privacy':
     case 'terms':
@@ -84,6 +86,8 @@ export const buildPath = (route: Route): string => {
   switch (route.name) {
     case 'home':
       return '/';
+    case 'our-store':
+      return '/our-store';
     case 'shop': {
       const parts: string[] = [];
       if (route.category) parts.push(`category=${encodeURIComponent(route.category)}`);

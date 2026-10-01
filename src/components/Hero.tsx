@@ -10,7 +10,7 @@ const Hero: React.FC = () => {
   const { navigate } = useRouter();
 
   return (
-    <section className="relative pt-[72px] md:pt-[88px] bg-white overflow-hidden">
+    <section className="relative pt-[64px] sm:pt-[72px] md:pt-[88px] bg-white overflow-hidden">
       {/* ============================================================ */}
       {/* MOBILE HERO SECTION (< md)                                   */}
       {/* Exact match to Figma Mobile Hero (Frame 306 / Node 2126-10454) */}

@@ -40,14 +40,14 @@ const CategoryStrip: React.FC = () => {
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full bg-[#C47457] py-10 md:py-14 my-8 md:my-12 overflow-hidden"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full bg-[#C47457] mt-5 sm:mt-6 md:mt-8 lg:mt-10 py-6 sm:py-8 md:py-10 lg:py-12 overflow-hidden"
     >
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-5 sm:gap-6 lg:gap-8">
           {/* Left Title */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
