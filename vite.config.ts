@@ -2,7 +2,9 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
+
+const devEnv = loadEnv('development', process.cwd(), '');
 
 const sentryPlugin =
   process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
@@ -28,10 +30,110 @@ const apiDevPlugin = {
         res.end(JSON.stringify({ devMode: true, message: 'Local dev server: using direct Firestore order placement' }));
         return;
       }
+      if (req.url === '/api/payments/create-order' || req.url?.startsWith('/api/payments/create-order?')) {
+        let bodyStr = '';
+        req.on('data', (chunk: any) => {
+          bodyStr += chunk;
+        });
+        req.on('end', async () => {
+          try {
+            const body = JSON.parse(bodyStr || '{}');
+            const key_id = devEnv.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
+            const key_secret = devEnv.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
+
+            if (!key_id || !key_secret) {
+              res.statusCode = 503;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'payments_not_configured' }));
+              return;
+            }
+
+            const amountMinor = Number(body.amountMinor) || 10000;
+            const RazorpayModule = await import('razorpay');
+            const Razorpay = (RazorpayModule as any).default || RazorpayModule;
+            const rzp = new Razorpay({ key_id, key_secret });
+            const order = await rzp.orders.create({
+              amount: amountMinor,
+              currency: 'INR',
+              receipt: `tc_${Date.now().toString(36)}`,
+              notes: {
+                itemCount: String(body.items?.length || 0),
+                paymentMethod: body.paymentMethod || 'upi',
+              },
+            });
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify({
+                orderId: order.id,
+                amount: order.amount,
+                currency: 'INR',
+                razorpayKeyId: key_id,
+                breakdown: {
+                  total: Math.round(order.amount / 100),
+                },
+              }),
+            );
+          } catch (err: any) {
+            console.error('[dev-create-order-error]', err);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err?.message || 'create_order_failed' }));
+          }
+        });
+        return;
+      }
+      if (req.url === '/api/payments/verify' || req.url?.startsWith('/api/payments/verify?')) {
+        let bodyStr = '';
+        req.on('data', (chunk: any) => {
+          bodyStr += chunk;
+        });
+        req.on('end', async () => {
+          try {
+            const body = JSON.parse(bodyStr || '{}');
+            const key_secret = devEnv.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET;
+            if (!key_secret) {
+              res.statusCode = 503;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'payments_not_configured' }));
+              return;
+            }
+
+            const crypto = await import('node:crypto');
+            const expected = crypto
+              .createHmac('sha256', key_secret)
+              .update(`${body.razorpay_order_id}|${body.razorpay_payment_id}`)
+              .digest('hex');
+
+            if (expected !== body.razorpay_signature) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'signature_mismatch' }));
+              return;
+            }
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify({
+                ok: true,
+                devMode: true,
+                orderId: `tc_dev_${Date.now().toString(36)}`,
+              }),
+            );
+          } catch (err: any) {
+            console.error('[dev-verify-error]', err);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: err?.message || 'verify_failed' }));
+          }
+        });
+        return;
+      }
       next();
     });
   },
 };
+
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), apiDevPlugin, ...(sentryPlugin ? [sentryPlugin] : [])],

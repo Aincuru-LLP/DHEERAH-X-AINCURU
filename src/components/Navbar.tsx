@@ -62,7 +62,29 @@ const Navbar: React.FC = () => {
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const accountRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [dropdownCoords, setDropdownCoords] = useState<{ top: number; right: number }>({ top: 72, right: 16 });
+
+  const updateDropdownCoords = () => {
+    if (!accountButtonRef.current) return;
+    const btnRect = accountButtonRef.current.getBoundingClientRect();
+    const headerRect = headerRef.current?.getBoundingClientRect();
+
+    // Position directly below the header with 6px spacing
+    const top = (headerRect ? headerRect.bottom : btnRect.bottom) + 6;
+
+    // Right offset from viewport edge to right edge of button
+    const distFromRight = window.innerWidth - btnRect.right;
+
+    // Safe horizontal clamping:
+    // Minimum 12px from right viewport edge
+    // And on narrow screens, ensure minimum 12px from left viewport edge as well
+    const right = Math.max(12, Math.min(distFromRight, window.innerWidth - 240 - 12));
+
+    setDropdownCoords({ top, right });
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -80,14 +102,56 @@ const Navbar: React.FC = () => {
 
   useEffect(() => {
     if (!accountOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+    updateDropdownCoords();
+
+    const onScroll = () => updateDropdownCoords();
+    const onResize = () => updateDropdownCoords();
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [accountOpen]);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        accountButtonRef.current &&
+        !accountButtonRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
         setAccountOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
   }, [accountOpen]);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setAccountOpen(false);
+        accountButtonRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [accountOpen]);
+
+  useEffect(() => {
+    setAccountOpen(false);
+  }, [route]);
 
   const { products: catalogProducts } = useCatalog();
   const searchPool = catalogProducts;
@@ -344,7 +408,7 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300 bg-white box-border overflow-x-hidden">
+      <header ref={headerRef} className="fixed top-0 left-0 w-full z-50 transition-all duration-300 bg-white box-border">
 
 
         {/* Main navigation tier */}
@@ -519,8 +583,9 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {/* Account Menu / Profile */}
-                <div ref={accountRef} className="relative shrink-0">
+                <div className="relative shrink-0">
                   <button
+                    ref={accountButtonRef}
                     onClick={() => setAccountOpen(v => !v)}
                     aria-haspopup="true"
                     aria-expanded={accountOpen}
@@ -529,65 +594,106 @@ const Navbar: React.FC = () => {
                   >
                     <User className={`w-5 h-5 shrink-0 ${accountOpen ? 'text-[#C7042B]' : ''}`} />
                   </button>
-
-                  <AnimatePresence>
-                    {accountOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute right-0 top-full mt-2 w-60 max-w-[calc(100vw-16px)] bg-white border border-[#E8D7BD] shadow-2xl rounded-md py-2 z-[60]"
-                      >
-                        {user ? (
-                          <>
-                            <div className="px-4 py-3 border-b border-[#E8D7BD] mb-1 bg-white">
-                              <p className="text-[13px] font-extrabold text-[#050505] truncate">Hello, {user.fullName.split(' ')[0]}</p>
-                              <p className="text-[11px] text-[#6B6358] truncate">{user.email}</p>
-                            </div>
-                            <button onClick={() => { setAccountOpen(false); navigate({ name: 'account', tab: 'profile' }); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors">
-                              <UserCircle className="w-4 h-4 text-[#6B6358]" /> My Profile
-                            </button>
-                            <button onClick={() => { setAccountOpen(false); navigate({ name: 'account', tab: 'orders' }); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors">
-                              <PackageOpen className="w-4 h-4 text-[#6B6358]" /> My Orders
-                            </button>
-                            <button onClick={() => { setAccountOpen(false); navigate({ name: 'account', tab: 'wishlist' }); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors">
-                              <Heart className="w-4 h-4 text-[#6B6358]" /> Wishlist
-                            </button>
-                            {isAdmin && (
-                              <button onClick={() => { setAccountOpen(false); navigate({ name: 'admin' }); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold text-[#C7042B] hover:bg-[#F1E6D2] text-left transition-colors">
-                                <LayoutDashboard className="w-4 h-4" /> Admin Console
-                              </button>
-                            )}
-                            <div className="border-t border-[#E8D7BD] mt-1 pt-1">
-                              <button onClick={() => { setAccountOpen(false); logout(); navigate({ name: 'home' }); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#8F0320] hover:bg-[#FBE6E6] text-left transition-colors">
-                                <LogOut className="w-4 h-4" /> Sign out
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="px-4 py-3 border-b border-[#E8D7BD] mb-1 bg-white">
-                              <p className="text-[13px] font-extrabold text-[#050505]">Dheerah Atelier</p>
-                              <p className="text-[11px] text-[#6B6358]">Sign in to access your bag & orders</p>
-                            </div>
-                            <button onClick={() => { setAccountOpen(false); navigate({ name: 'login' }); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors">
-                              <LogIn className="w-4 h-4 text-[#6B6358]" /> Sign In
-                            </button>
-                            <button onClick={() => { setAccountOpen(false); navigate({ name: 'register' }); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors">
-                              <UserPlus className="w-4 h-4 text-[#6B6358]" /> Create Account
-                            </button>
-                          </>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Account Dropdown Portal — rendered cleanly above page content and directly below header */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {accountOpen && (
+              <motion.div
+                ref={menuRef}
+                role="menu"
+                aria-label="Account options"
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                style={{
+                  position: 'fixed',
+                  top: `${dropdownCoords.top}px`,
+                  right: `${dropdownCoords.right}px`,
+                }}
+                className="w-60 max-w-[calc(100vw-24px)] bg-white border border-[#E8D7BD] shadow-[0_12px_36px_rgba(5,5,5,0.12)] rounded-md py-2 z-[75]"
+              >
+                {user ? (
+                  <>
+                    <div className="px-4 py-3 border-b border-[#E8D7BD] mb-1 bg-white">
+                      <p className="text-[13px] font-extrabold text-[#050505] truncate">Hello, {user.fullName.split(' ')[0]}</p>
+                      <p className="text-[11px] text-[#6B6358] truncate">{user.email}</p>
+                    </div>
+                    <button
+                      role="menuitem"
+                      onClick={() => { setAccountOpen(false); navigate({ name: 'account', tab: 'profile' }); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors"
+                    >
+                      <UserCircle className="w-4 h-4 text-[#6B6358]" /> My Profile
+                    </button>
+                    <button
+                      role="menuitem"
+                      onClick={() => { setAccountOpen(false); navigate({ name: 'account', tab: 'orders' }); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors"
+                    >
+                      <PackageOpen className="w-4 h-4 text-[#6B6358]" /> My Orders
+                    </button>
+                    <button
+                      role="menuitem"
+                      onClick={() => { setAccountOpen(false); navigate({ name: 'account', tab: 'wishlist' }); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors"
+                    >
+                      <Heart className="w-4 h-4 text-[#6B6358]" /> Wishlist
+                    </button>
+                    {isAdmin && (
+                      <button
+                        role="menuitem"
+                        onClick={() => { setAccountOpen(false); navigate({ name: 'admin' }); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold text-[#C7042B] hover:bg-[#F1E6D2] text-left transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4" /> Admin Console
+                      </button>
+                    )}
+                    <div className="border-t border-[#E8D7BD] mt-1 pt-1">
+                      <button
+                        role="menuitem"
+                        onClick={() => { setAccountOpen(false); logout(); navigate({ name: 'home' }); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold text-[#8F0320] hover:bg-[#FBE6E6] text-left transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" /> Sign out
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="px-4 py-3 border-b border-[#E8D7BD] mb-1 bg-white">
+                      <p className="text-[13px] font-extrabold text-[#050505]">Dheerah Atelier</p>
+                      <p className="text-[11px] text-[#6B6358]">Sign in to access your bag & orders</p>
+                    </div>
+                    <button
+                      role="menuitem"
+                      onClick={() => { setAccountOpen(false); navigate({ name: 'login' }); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors"
+                    >
+                      <LogIn className="w-4 h-4 text-[#6B6358]" /> Sign In
+                    </button>
+                    <button
+                      role="menuitem"
+                      onClick={() => { setAccountOpen(false); navigate({ name: 'register' }); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-[#1C1A18] hover:bg-[#F1E6D2] text-left transition-colors"
+                    >
+                      <UserPlus className="w-4 h-4 text-[#6B6358]" /> Create Account
+                    </button>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
 
       {typeof document !== 'undefined' && createPortal(mobileDrawer, document.body)}
       {typeof document !== 'undefined' && createPortal(searchOverlay, document.body)}

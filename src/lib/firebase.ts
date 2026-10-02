@@ -1025,6 +1025,9 @@ export const ordersApi = {
     shippingAddress: DocumentData;
     paymentMethod: 'card' | 'upi' | 'cod';
     couponCode?: string;
+    paymentId?: string;
+    razorpayOrderId?: string;
+    paymentStatus?: 'pending' | 'paid' | 'failed';
   }) => {
     const user = auth.currentUser;
     if (!user) throw new Error('not_signed_in');
@@ -1125,6 +1128,10 @@ export const ordersApi = {
       userId: user.uid,
       status: 'placed',
       paymentMethod: input.paymentMethod,
+      paymentStatus: input.paymentStatus ?? (input.paymentMethod === 'cod' ? 'pending' : 'paid'),
+      paymentProvider: input.paymentMethod === 'cod' ? null : 'razorpay',
+      ...(input.paymentId ? { paymentId: input.paymentId } : {}),
+      ...(input.razorpayOrderId ? { razorpayOrderId: input.razorpayOrderId } : {}),
       items: resolvedItems,
       subtotal,
       shipping,

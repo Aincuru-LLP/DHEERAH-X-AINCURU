@@ -75,6 +75,7 @@ export async function createPaymentOrder(input: {
   items: CartLine[];
   couponCode?: string;
   paymentMethod: 'card' | 'upi' | 'cod';
+  amountMinor?: number;
 }): Promise<CreatedOrder> {
   const res = await apiPost('/api/payments/create-order', input, await authHeader());
   if (res.status === 503) throw new PaymentsNotConfiguredError();
@@ -203,6 +204,19 @@ export async function verifyPayment(args: {
   if (!res.ok || !data.ok) {
     throw new Error(typeof data.error === 'string' ? data.error : 'verify_failed');
   }
+  if (data.devMode) {
+    const { ordersApi } = await import('./firebase');
+    const placed = await ordersApi.place({
+      items: args.order.items,
+      shippingAddress: args.order.shippingAddress as never,
+      paymentMethod: args.order.paymentMethod,
+      couponCode: args.order.couponCode,
+      paymentId: args.success.razorpay_payment_id,
+      razorpayOrderId: args.success.razorpay_order_id,
+      paymentStatus: 'paid',
+    });
+    return { orderId: placed.id };
+  }
   return { orderId: String(data.orderId) };
 }
 
@@ -217,11 +231,13 @@ export async function runRazorpayPayment(input: {
   shippingAddress: Record<string, unknown>;
   userId?: string;
   prefill?: { name?: string; email?: string; contact?: string };
+  amountMinor?: number;
 }): Promise<{ orderId: string }> {
   const created = await createPaymentOrder({
     items: input.items,
     couponCode: input.couponCode,
     paymentMethod: input.paymentMethod,
+    amountMinor: input.amountMinor,
   });
   await loadRazorpayScript();
   const success = await openRazorpayCheckout({ created, prefill: input.prefill });

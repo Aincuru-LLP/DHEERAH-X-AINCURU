@@ -310,6 +310,7 @@ const CheckoutPage: React.FC = () => {
           shippingAddress: address as unknown as Record<string, unknown>,
           userId: user.id,
           prefill: { name: address.fullName, email: address.email, contact: address.phone },
+          amountMinor: Math.round(payable * 100),
         });
         finishOrder(orderId, address);
         return;
