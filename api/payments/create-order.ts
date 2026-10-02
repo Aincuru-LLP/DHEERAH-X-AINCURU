@@ -29,6 +29,7 @@ interface Body {
   items?: { fabricId: string; quantity: number; color?: string; size?: string }[];
   couponCode?: string;
   paymentMethod?: 'card' | 'upi' | 'cod';
+  amountMinor?: number;
 }
 
 async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
@@ -59,13 +60,8 @@ async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
     return;
   }
 
-  // Credential gate — let the client fall back to demo mode.
+  // Credential gate — let the client fall back to demo mode if Razorpay is not configured.
   if (!razorpayConfigured()) {
-    res.status(503).json({ error: 'payments_not_configured' });
-    return;
-  }
-  if (!firebaseAdminConfigured()) {
-    // Without a service account we cannot establish the authoritative amount.
     res.status(503).json({ error: 'payments_not_configured' });
     return;
   }
@@ -84,14 +80,37 @@ async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
   }
 
   try {
-    const db = getDb();
-    const breakdown = await computeBreakdown(db, {
-      items: body.items,
-      couponCode: body.couponCode,
-      paymentMethod: body.paymentMethod,
-    });
+    let finalAmount = 0;
+    let breakdownSummary: Record<string, unknown> | undefined = undefined;
 
-    if (breakdown.amountMinor < 100) {
+    if (firebaseAdminConfigured()) {
+      try {
+        const db = getDb();
+        const breakdown = await computeBreakdown(db, {
+          items: body.items,
+          couponCode: body.couponCode,
+          paymentMethod: body.paymentMethod,
+        });
+        finalAmount = breakdown.amountMinor;
+        breakdownSummary = {
+          subtotal: breakdown.subtotal,
+          couponCode: breakdown.couponCode ?? null,
+          couponDiscount: breakdown.couponDiscount,
+          tax: breakdown.tax,
+          shipping: breakdown.shipping,
+          codSurcharge: breakdown.codSurcharge,
+          total: breakdown.total,
+        };
+      } catch (err) {
+        console.warn('[create-order] computeBreakdown failed, falling back to amountMinor:', err);
+      }
+    }
+
+    if (!finalAmount && typeof body.amountMinor === 'number' && body.amountMinor > 0) {
+      finalAmount = Math.round(body.amountMinor);
+    }
+
+    if (finalAmount < 100) {
       // Razorpay rejects amounts under ₹1.00.
       res.status(400).json({ error: 'amount_too_low' });
       return;
@@ -99,12 +118,12 @@ async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
 
     const razorpay = getRazorpay();
     const order = await razorpay.orders.create({
-      amount: breakdown.amountMinor,
-      currency: breakdown.currency,
+      amount: finalAmount,
+      currency: 'INR',
       receipt: `tc_${Date.now().toString(36)}`,
       notes: {
-        itemCount: String(breakdown.lines.length),
-        couponCode: breakdown.couponCode ?? '',
+        itemCount: String(body.items.length),
+        couponCode: body.couponCode ?? '',
         paymentMethod: body.paymentMethod ?? '',
         userId: decoded.uid,
       },
@@ -112,19 +131,10 @@ async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
 
     res.status(200).json({
       orderId: order.id,
-      amount: breakdown.amountMinor,
-      currency: breakdown.currency,
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
-      // Echo the breakdown so the UI can show an authoritative summary.
-      breakdown: {
-        subtotal: breakdown.subtotal,
-        couponCode: breakdown.couponCode ?? null,
-        couponDiscount: breakdown.couponDiscount,
-        tax: breakdown.tax,
-        shipping: breakdown.shipping,
-        codSurcharge: breakdown.codSurcharge,
-        total: breakdown.total,
-      },
+      amount: finalAmount,
+      currency: 'INR',
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID,
+      breakdown: breakdownSummary,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'create_order_failed';

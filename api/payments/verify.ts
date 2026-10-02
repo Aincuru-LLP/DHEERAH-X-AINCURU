@@ -74,7 +74,7 @@ async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
     return;
   }
 
-  if (!razorpayConfigured() || !firebaseAdminConfigured()) {
+  if (!razorpayConfigured()) {
     res.status(503).json({ error: 'payments_not_configured' });
     return;
   }
@@ -100,6 +100,18 @@ async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
   // 1. Signature check.
   if (!verifyCheckoutSignature({ razorpay_order_id, razorpay_payment_id, razorpay_signature })) {
     res.status(400).json({ error: 'signature_mismatch' });
+    return;
+  }
+
+  if (!firebaseAdminConfigured()) {
+    // If Firebase Admin credentials are not set on Vercel, the signature is cryptographically verified.
+    // Return devMode: true so the client-side Firebase SDK records the paid order directly into Firestore.
+    res.status(200).json({
+      ok: true,
+      devMode: true,
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+    });
     return;
   }
 

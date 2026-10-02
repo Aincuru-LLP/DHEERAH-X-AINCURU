@@ -10,17 +10,14 @@ import crypto from 'node:crypto';
 import Razorpay from 'razorpay';
 
 export function razorpayConfigured(): boolean {
-  return Boolean(
-    process.env.RAZORPAY_KEY_ID &&
-      process.env.RAZORPAY_KEY_SECRET &&
-      process.env.RAZORPAY_KEY_ID.trim() &&
-      process.env.RAZORPAY_KEY_SECRET.trim(),
-  );
+  const key_id = (process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '').trim();
+  const key_secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+  return Boolean(key_id && key_secret);
 }
 
 export function getRazorpay(): Razorpay {
-  const key_id = process.env.RAZORPAY_KEY_ID;
-  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+  const key_id = (process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '').trim();
+  const key_secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
   if (!key_id || !key_secret) throw new Error('payments_not_configured');
   return new Razorpay({ key_id, key_secret });
 }

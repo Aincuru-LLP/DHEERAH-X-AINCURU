@@ -47,7 +47,7 @@ async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
     res.status(405).json({ error: 'method_not_allowed' });
     return;
   }
-  if (!firebaseAdminConfigured() || !process.env.RAZORPAY_WEBHOOK_SECRET) {
+  if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
     res.status(503).json({ error: 'payments_not_configured' });
     return;
   }
@@ -82,6 +82,11 @@ async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
   const payment = event.payload?.payment?.entity;
   if (event.event !== 'payment.captured' || !payment?.id) {
     res.status(200).json({ ok: true, ignored: true });
+    return;
+  }
+
+  if (!firebaseAdminConfigured()) {
+    res.status(200).json({ ok: true, note: 'verified_signature_without_admin_db' });
     return;
   }
 
