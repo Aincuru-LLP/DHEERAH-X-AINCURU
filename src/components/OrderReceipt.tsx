@@ -28,8 +28,13 @@ const OrderReceipt: React.FC<Props> = ({ order }) => {
   });
   const shortHash = `DH-${order.id.slice(-8).toUpperCase()}`;
 
+  const safeTax =
+    typeof order.tax === 'number' && !isNaN(order.tax)
+      ? order.tax
+      : Math.round((Math.max(0, (order.subtotal ?? 0) - (order.couponDiscount ?? 0)) * 0.05) / 1.05);
+
   return (
-    <section className="receipt bg-white border border-[#E8D7BD] shadow-sm print:border-0 rounded">
+    <section className="receipt bg-white border border-[#EAE6DF] shadow-[0_4px_28px_rgba(0,0,0,0.03)] rounded-2xl print:border-0 print:shadow-none">
       {/* Print stylesheet: hide chrome (nav, footer, modals, page hero & buttons),
           force white background, target A4 paper. */}
       <style>{`
@@ -57,14 +62,14 @@ const OrderReceipt: React.FC<Props> = ({ order }) => {
           <button
             type="button"
             onClick={() => window.print()}
-            className="btn-outline inline-flex items-center gap-2 text-[12px] py-1.5 px-4"
+            className="btn-outline inline-flex items-center gap-2 text-[12px] py-1.5 px-4 rounded-lg"
           >
-            <Printer className="w-4 h-4 text-[#CC9E00]" /> Print Receipt
+            <Printer className="w-4 h-4 text-[#A6823B]" /> Print Receipt
           </button>
         </div>
 
         {/* Brand mark */}
-        <header className="flex items-start justify-between border-b border-[#E8D7BD] pb-5 mb-5">
+        <header className="flex items-start justify-between border-b border-[#EAE6DF] pb-5 mb-5">
           <div className="flex items-center gap-3">
             <img src="/branding/dheerah-logo.png" alt="Dheerah Designer Boutique" className="h-10 w-auto object-contain" />
           </div>
@@ -76,7 +81,7 @@ const OrderReceipt: React.FC<Props> = ({ order }) => {
         </header>
 
         {/* Meta */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 text-[12px] bg-[#FAF7F0] p-4 border border-[#E8D7BD] rounded">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 text-[12px] bg-[#FAF9F6] p-4 sm:p-5 border border-[#EAE6DF] rounded-xl">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#78716A] mb-1">Placed</p>
             <p className="font-medium text-[#1C1A18]">{placedHuman}</p>
@@ -88,16 +93,16 @@ const OrderReceipt: React.FC<Props> = ({ order }) => {
           </div>
           <div className="col-span-2 sm:col-span-1">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#78716A] mb-1">Status</p>
-            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#FAF7F0] text-[#C7042B] border border-[#C7042B]/30">
+            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white text-[#C7042B] border border-[#C7042B]/30 shadow-xs">
               {order.status ?? 'placed'}
             </span>
           </div>
         </div>
 
         {/* Items table */}
-        <div className="border border-[#E8D7BD] mb-6 overflow-x-auto rounded">
+        <div className="border border-[#EAE6DF] mb-6 overflow-x-auto rounded-xl">
           <table className="w-full text-[12px]">
-            <thead className="bg-[#F1E6D2] text-left uppercase tracking-wider text-[10px] text-[#5A554E]">
+            <thead className="bg-[#FAF9F6] text-left uppercase tracking-wider text-[10px] text-[#554E44] border-b border-[#EAE6DF]">
               <tr>
                 <th className="px-3.5 py-2.5 font-bold">Couture Piece</th>
                 <th className="px-3.5 py-2.5 font-bold">Colour</th>
@@ -112,14 +117,14 @@ const OrderReceipt: React.FC<Props> = ({ order }) => {
                 const rate = fs.price ?? 0;
                 const qty = it.quantity ?? 0;
                 return (
-                  <tr key={`${it.fabricId}-${idx}`} className="border-t border-[#E8D7BD] align-top hover:bg-[#FAF7F0]/60 transition-colors">
+                  <tr key={`${it.fabricId}-${idx}`} className="border-t border-[#EAE6DF] align-top hover:bg-[#FAF9F6]/60 transition-colors">
                     <td className="px-3.5 py-3">
                       <div className="flex gap-3 items-start">
                         <FabricImage
                           photo={fs.photo ?? ''}
                           fallback={fs.image ?? ''}
                           alt={fs.name ?? 'Item'}
-                          className="w-11 h-14 object-cover bg-[#FAF7F0] border border-[#E8D7BD] rounded flex-shrink-0 print:hidden"
+                          className="w-11 h-14 object-cover bg-[#FAF9F6] border border-[#EAE6DF] rounded-md flex-shrink-0 print:hidden"
                         />
                         <div className="min-w-0">
                           <p className="font-bold text-[#1C1A18]">{fs.brand ?? 'DHEERAH'}</p>
@@ -140,7 +145,7 @@ const OrderReceipt: React.FC<Props> = ({ order }) => {
 
         {/* Totals */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-          <div>
+          <div className="bg-[#FAF9F6] p-5 border border-[#EAE6DF] rounded-xl">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[#78716A] mb-1.5">Destination Patron</p>
             <address className="not-italic text-[12px] leading-relaxed text-[#1C1A18]">
               <span className="font-bold text-[13px]">{order.shippingAddress.fullName}</span><br />
@@ -152,7 +157,7 @@ const OrderReceipt: React.FC<Props> = ({ order }) => {
             </address>
           </div>
 
-          <dl className="text-[12px] space-y-2 sm:justify-self-end sm:min-w-[260px] bg-[#FAF7F0] p-4 border border-[#E8D7BD] rounded">
+          <dl className="text-[12px] space-y-2.5 sm:justify-self-end sm:min-w-[280px] bg-[#FAF9F6] p-5 border border-[#EAE6DF] rounded-xl">
             <div className="flex justify-between gap-6 text-[#5A554E]"><dt>Subtotal (incl. GST)</dt><dd className="text-[#1C1A18] font-medium">{formatINR(order.subtotal)}</dd></div>
             {order.couponCode && (
               <div className="flex justify-between gap-6">
@@ -164,14 +169,14 @@ const OrderReceipt: React.FC<Props> = ({ order }) => {
               <dt>Atelier Shipping</dt>
               <dd className="text-[#1C1A18] font-medium">{order.shipping === 0 ? 'COMPLIMENTARY' : formatINR(order.shipping)}</dd>
             </div>
-            <div className="flex justify-between gap-6 text-[#78716A] text-[11px]"><dt>GST (incl.)</dt><dd>{formatINR(order.tax)}</dd></div>
-            <div className="flex justify-between gap-6 pt-2.5 mt-2 border-t border-[#E8D7BD] font-bold text-[15px] text-[#1C1A18]">
+            <div className="flex justify-between gap-6 text-[#78716A] text-[11px]"><dt>GST (incl.)</dt><dd>{formatINR(safeTax)}</dd></div>
+            <div className="flex justify-between gap-6 pt-2.5 mt-2 border-t border-[#EAE6DF] font-bold text-[15px] text-[#1C1A18]">
               <dt>Total Amount</dt><dd className="text-[#C7042B]">{formatINR(order.total)}</dd>
             </div>
           </dl>
         </div>
 
-        <footer className="mt-8 pt-5 border-t border-[#E8D7BD] text-center text-[11px] text-[#78716A]">
+        <footer className="mt-8 pt-5 border-t border-[#EAE6DF] text-center text-[11px] text-[#78716A]">
           <p className="font-bold text-[#1C1A18] mb-1">Sold by Dheerah Designer Boutique, Jubilee Hills, Hyderabad</p>
           <p className="max-w-md mx-auto leading-relaxed">Thank you for choosing Dheerah. For bespoke alteration assistance or concierge inquiries, quote receipt <span className="font-mono font-bold text-[#1C1A18]">{shortHash}</span>.</p>
         </footer>

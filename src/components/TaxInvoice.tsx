@@ -19,7 +19,7 @@ const TaxInvoice: React.FC<{ order: Order }> = ({ order }) => {
   const halfRate = (gst.ratePercent / 2).toFixed(gst.ratePercent % 2 === 0 ? 0 : 1);
 
   return (
-    <section className="receipt bg-white border border-[#E8D7BD] shadow-sm print:border-0 rounded">
+    <section className="receipt bg-white border border-[#EAE6DF] shadow-[0_4px_28px_rgba(0,0,0,0.03)] rounded-2xl print:border-0 print:shadow-none">
       <style>{`
         @media print {
           @page { size: A4; margin: 14mm; }
@@ -33,13 +33,13 @@ const TaxInvoice: React.FC<{ order: Order }> = ({ order }) => {
 
       <div className="px-6 py-6 sm:px-8 sm:py-8 max-w-[820px] mx-auto">
         <div className="no-print flex justify-end mb-4">
-          <button type="button" onClick={() => window.print()} className="btn-outline inline-flex items-center gap-2 text-[12px] py-1.5 px-4">
-            <Printer className="w-4 h-4 text-[#CC9E00]" /> Print / Save PDF
+          <button type="button" onClick={() => window.print()} className="btn-outline inline-flex items-center gap-2 text-[12px] py-1.5 px-4 rounded-lg">
+            <Printer className="w-4 h-4 text-[#A6823B]" /> Print / Save PDF
           </button>
         </div>
 
         {/* Heading */}
-        <div className="text-center border-b border-[#E8D7BD] pb-4 mb-5">
+        <div className="text-center border-b border-[#EAE6DF] pb-4 mb-5">
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[color:var(--dheerah-crimson)]">Tax Invoice (Statutory GST)</p>
           <p className="font-serif text-[24px] font-normal text-[#1C1A18] tracking-wide mt-1">{BUSINESS.brandName}</p>
         </div>

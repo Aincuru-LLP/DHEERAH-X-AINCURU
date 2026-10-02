@@ -31,7 +31,10 @@ const norm = (s: string | undefined | null): string =>
 export function gstBreakdown(order: Order): GstBreakdown {
   // order.subtotal is tax-inclusive; order.tax is the embedded GST component.
   const inclusiveValue = Math.max(0, (order.subtotal ?? 0) - (order.couponDiscount ?? 0));
-  const totalTax = order.tax ?? 0;
+  const totalTax =
+    typeof order.tax === 'number' && !isNaN(order.tax)
+      ? order.tax
+      : Math.round((inclusiveValue * GST_RATE) / (1 + GST_RATE));
   const taxableValue = inclusiveValue - totalTax;
   // Intra-state when the buyer's shipping state matches the seller's home state.
   const isInterState = norm(order.shippingAddress?.state) !== norm(BUSINESS.stateName);
