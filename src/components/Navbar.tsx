@@ -456,7 +456,6 @@ const Navbar: React.FC = () => {
               {NAV.map(n => {
                 const isActive = activeCat === n.key || activeCat === n.label;
                 const onClick = () => goShop(n.key);
-                const isPremium = n.tone === 'premium';
                 return (
                   <div
                     key={n.key}
@@ -473,7 +472,6 @@ const Navbar: React.FC = () => {
                           : 'border-transparent text-[#1C1A18] hover:text-[#C7042B]'
                         }`}
                     >
-                      {isPremium && <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-[#CC9E00]" />}
                       {n.label}
                     </button>
                     {hoverCat === n.key && megaPanel(n)}

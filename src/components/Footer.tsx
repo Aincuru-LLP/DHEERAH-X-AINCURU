@@ -53,44 +53,62 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="bg-[#050505] text-[#FAF7F0] border-t border-[#CC9E00]/30">
+    <footer className="relative bg-[#050505] text-[#FAF7F0] border-t border-[#CC9E00]/30 overflow-hidden">
+      {/* Subtle atmospheric ambient glow */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          background: 'radial-gradient(circle at 50% 0%, rgba(204, 158, 0, 0.07) 0%, transparent 65%), radial-gradient(circle at 85% 100%, rgba(199, 4, 43, 0.05) 0%, transparent 55%)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Top delicate gold hairline highlight */}
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-[#CC9E00]/50 to-transparent relative z-10" />
+
       {/* Brand anchor header */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 md:pt-12 pb-6 sm:pb-8 flex flex-col items-center text-center">
-        <div className="inline-block bg-[#FAF7F0] px-8 py-3.5 rounded border border-[#CC9E00]/50 mb-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+      <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12 md:pt-14 pb-8 sm:pb-10 flex flex-col items-center text-center">
+        <div className="inline-block bg-[#FAF7F0] px-8 sm:px-10 py-3.5 sm:py-4 rounded-sm border border-[#CC9E00]/40 mb-4 sm:mb-5 shadow-[0_8px_28px_rgba(0,0,0,0.45)] ring-1 ring-white/10 hover:border-[#CC9E00]/70 hover:shadow-[0_12px_36px_rgba(204,158,0,0.18)] transition-all duration-300">
           <img
             src="/branding/dheerah-logo.png"
             alt="Dheerah Designer Boutique"
-            className="h-10 md:h-12 w-auto object-contain select-none"
+            className="h-10 sm:h-11 md:h-12 w-auto object-contain select-none"
             draggable={false}
             loading="lazy"
           />
         </div>
-        <p className="text-[13px] md:text-[14px] text-[#E8D7BD] max-w-lg font-light tracking-wide mt-2">
+        <p className="font-serif italic text-[14px] sm:text-[15px] md:text-[16px] text-[#E8D7BD] max-w-xl font-normal tracking-[0.03em] leading-relaxed">
           Heritage Indian Designer Wear · Hand-woven Craftsmanship & Bespoke Couture
         </p>
       </div>
 
-      {/* Decorative hairline */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10">
-        <div className="h-px bg-gradient-to-r from-transparent via-[#CC9E00]/40 to-transparent" />
+      {/* Decorative hairline with center diamond ornament */}
+      <div className="relative z-10 max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10 my-1">
+        <div className="relative flex items-center justify-center">
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-[#CC9E00]/30 to-transparent" />
+          <span className="absolute w-2 h-2 rotate-45 border border-[#CC9E00]/60 bg-[#050505]" />
+        </div>
       </div>
 
       {/* Main navigation columns */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10 py-12 md:py-16 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
+      <div className="relative z-10 max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10 py-12 md:py-16 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 lg:gap-12">
         {cols.map(col => (
           <div key={col.title}>
-            <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#CC9E00] mb-4 flex items-center gap-1.5">
-              <span className="w-1 h-1 rounded-full bg-[#C7042B]" />
+            <h4 className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#CC9E00] mb-5 flex items-center gap-2 font-sans">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C7042B] ring-2 ring-[#CC9E00]/30 shrink-0" />
               {col.title}
             </h4>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {col.links.map(l => (
                 <li key={l.label}>
                   <button
                     onClick={l.to}
-                    className="text-[13px] text-[#E8D7BD]/80 hover:text-[#C7042B] transition-colors text-left"
+                    className="group flex items-center gap-1.5 text-[13px] text-[#E8D7BD]/80 hover:text-[#FAF7F0] transition-all duration-200 text-left font-light tracking-wide focus:outline-hidden"
                   >
-                    {l.label}
+                    <span className="w-1 h-1 rounded-full bg-[#C7042B] opacity-0 -translate-x-1.5 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 shrink-0" />
+                    <span className="group-hover:translate-x-0.5 transition-transform duration-200">
+                      {l.label}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -99,17 +117,33 @@ const Footer: React.FC = () => {
         ))}
 
         {/* Concierge column */}
-        <div>
-          <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#CC9E00] mb-4 flex items-center gap-1.5">
-            <span className="w-1 h-1 rounded-full bg-[#C7042B]" />
+        <div className="col-span-2 sm:col-span-1 md:col-span-1">
+          <h4 className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#CC9E00] mb-5 flex items-center gap-2 font-sans">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C7042B] ring-2 ring-[#CC9E00]/30 shrink-0" />
             Atelier Concierge
           </h4>
-          <div className="flex flex-col gap-2.5 text-[13px] text-[#E8D7BD]/80">
-            <a href="tel:+916304211922" className="flex items-center gap-2 hover:text-[#C7042B] transition-colors">
-              <Phone className="w-3.5 h-3.5 text-[#CC9E00]" /> +91 63042 11922
+          <div className="bg-white/[0.02] border border-[#CC9E00]/25 rounded-sm p-4 sm:p-5 backdrop-blur-xs hover:border-[#CC9E00]/50 transition-colors shadow-[0_4px_20px_rgba(0,0,0,0.3)] flex flex-col sm:flex-col gap-3.5">
+            <a
+              href="tel:+916304211922"
+              className="group flex items-center gap-3 text-[13px] text-[#E8D7BD]/90 hover:text-white transition-colors"
+            >
+              <span className="w-7 h-7 rounded-full bg-[#CC9E00]/10 border border-[#CC9E00]/30 flex items-center justify-center text-[#CC9E00] group-hover:bg-[#C7042B] group-hover:text-white group-hover:border-[#C7042B] transition-colors shrink-0">
+                <Phone className="w-3.5 h-3.5" />
+              </span>
+              <span className="font-light tracking-wide group-hover:translate-x-0.5 transition-transform duration-200">
+                +91 63042 11922
+              </span>
             </a>
-            <a href="mailto:hello@dheerah.com" className="flex items-center gap-2 hover:text-[#C7042B] transition-colors">
-              <Mail className="w-3.5 h-3.5 text-[#CC9E00]" /> hello@dheerah.com
+            <a
+              href="mailto:hello@dheerah.com"
+              className="group flex items-center gap-3 text-[13px] text-[#E8D7BD]/90 hover:text-white transition-colors"
+            >
+              <span className="w-7 h-7 rounded-full bg-[#CC9E00]/10 border border-[#CC9E00]/30 flex items-center justify-center text-[#CC9E00] group-hover:bg-[#C7042B] group-hover:text-white group-hover:border-[#C7042B] transition-colors shrink-0">
+                <Mail className="w-3.5 h-3.5" />
+              </span>
+              <span className="font-light tracking-wide group-hover:translate-x-0.5 transition-transform duration-200">
+                hello@dheerah.com
+              </span>
             </a>
           </div>
         </div>
@@ -117,35 +151,54 @@ const Footer: React.FC = () => {
 
       {/* Guest Invitation Bar */}
       {!user && (
-        <div className="border-t border-white/10 bg-[#0A0A0A]">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10 py-3.5 flex flex-wrap items-center justify-center gap-2 text-center">
-            <span className="text-[12px] text-[#E8D7BD]/80">Seeking personalized bridal styling?</span>
+        <div className="relative z-10 border-y border-[#CC9E00]/20 bg-gradient-to-r from-[#050505] via-[#141210] to-[#050505] py-4">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-center">
+            <span className="inline-flex items-center gap-2 text-[13px] text-[#E8D7BD]/90 font-light tracking-wide">
+              <Sparkles className="w-3.5 h-3.5 text-[#CC9E00]" />
+              Seeking personalized bridal styling?
+            </span>
             <button
               onClick={() => navigate({ name: 'register' })}
-              className="text-[12px] font-bold uppercase tracking-[0.1em] text-[#C7042B] hover:text-[#E3AF00] transition-colors"
+              className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#C7042B] hover:text-[#E3AF00] transition-colors group inline-flex items-center gap-1 focus:outline-hidden"
             >
-              Join Dheerah Atelier →
+              <span>Join Dheerah Atelier</span>
+              <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
             </button>
           </div>
         </div>
       )}
 
       {/* Bottom Legal & Value Strip */}
-      <div className="border-t border-white/10 py-6 bg-[#050505]">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10 flex flex-col md:flex-row gap-4 items-center justify-between text-[11px] text-[#98917F]">
-          <div className="flex flex-wrap gap-5 md:gap-8 justify-center md:justify-start">
-            <span className="inline-flex items-center gap-1.5"><Truck className="w-3.5 h-3.5 text-[#CC9E00]" /> Pan-India Insured Shipping</span>
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-[#CC9E00]" /> 100% Authentic Handlooms</span>
-            <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#CC9E00]" /> Bespoke Heritage Couture</span>
+      <div className="relative z-10 border-t border-white/[0.08] py-6 sm:py-7 bg-[#050505]">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-10 flex flex-col md:flex-row gap-5 items-center justify-between text-[11px] sm:text-[12px] text-[#98917F]">
+          <div className="flex flex-wrap gap-4 sm:gap-6 md:gap-8 justify-center md:justify-start">
+            <span className="inline-flex items-center gap-2 text-[#CBC4BE] font-normal">
+              <span className="w-6 h-6 rounded-full bg-[#CC9E00]/10 border border-[#CC9E00]/25 flex items-center justify-center text-[#CC9E00] shrink-0">
+                <Truck className="w-3 h-3" />
+              </span>
+              Pan-India Insured Shipping
+            </span>
+            <span className="inline-flex items-center gap-2 text-[#CBC4BE] font-normal">
+              <span className="w-6 h-6 rounded-full bg-[#CC9E00]/10 border border-[#CC9E00]/25 flex items-center justify-center text-[#CC9E00] shrink-0">
+                <ShieldCheck className="w-3 h-3" />
+              </span>
+              100% Authentic Handlooms
+            </span>
+            <span className="inline-flex items-center gap-2 text-[#CBC4BE] font-normal">
+              <span className="w-6 h-6 rounded-full bg-[#CC9E00]/10 border border-[#CC9E00]/25 flex items-center justify-center text-[#CC9E00] shrink-0">
+                <Sparkles className="w-3 h-3" />
+              </span>
+              Bespoke Heritage Couture
+            </span>
           </div>
           <div className="flex items-center gap-4 flex-wrap justify-center md:justify-end">
-            <span>
+            <span className="font-light tracking-wide text-center sm:text-left">
               © {new Date().getFullYear()} Dheerah Designer Boutique · All rights reserved.
               {gstinConfigured() && <> · GSTIN {BUSINESS.gstin}</>}
             </span>
             <button
               onClick={() => navigate({ name: 'admin' })}
-              className="tracking-[0.16em] uppercase hover:text-[#C7042B] transition-colors font-semibold"
+              className="tracking-[0.16em] uppercase text-[#98917F] hover:text-[#C7042B] transition-colors font-semibold py-1 px-2.5 rounded-xs border border-white/5 hover:border-[#C7042B]/40 focus:outline-hidden"
             >
               Atelier Admin
             </button>

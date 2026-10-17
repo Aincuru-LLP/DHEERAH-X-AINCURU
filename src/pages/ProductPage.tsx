@@ -9,6 +9,7 @@ import FabricImage from '../components/FabricImage';
 import ProductCard from '../components/ProductCard';
 import ReviewsSection from '../components/ReviewsSection';
 import StickyAddToCart from '../components/StickyAddToCart';
+import ProductCustomisationCTA from '../components/ProductCustomisationCTA';
 import { productsApi } from '../lib/firebase';
 import { getEffectiveProductGallery } from '../lib/productGallery';
 import { getEffectiveProductPrice, getEffectiveProductMrp, getEffectiveProductDiscount } from '../lib/productPricing';
@@ -547,6 +548,14 @@ const ProductPage: React.FC<Props> = ({ productId }) => {
                 </>
               )}
             </div>
+
+            {/* WhatsApp Customisation CTA */}
+            <ProductCustomisationCTA
+              product={fabric}
+              selectedColor={selectedColor}
+              selectedSize={selectedSize}
+              quantity={quantity}
+            />
 
             {/* Description */}
             <div className="mb-6">

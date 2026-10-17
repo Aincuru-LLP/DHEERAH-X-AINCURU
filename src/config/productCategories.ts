@@ -93,17 +93,20 @@ export const HEADER_PRODUCT_CATEGORIES: BusinessCategoryConfig[] = [
     },
   },
   {
-    key: 'salwar-suits',
-    label: 'Salwar Suits',
-    slug: 'salwar-suits',
-    tagline: 'Three-piece sets, kurta sets & festive coords',
-    color: '#DED0B6',
-    description: 'Tailored and unstitched kurta-pant-dupatta sets, anarkali sets, and festive ensembles.',
+    key: 'sarees',
+    label: 'Sarees',
+    slug: 'sarees',
+    tagline: 'Six yards of timeless elegance & heritage weaves',
+    color: '#C9A267',
+    description: 'Banarasi, Kanjivaram, and handloom silks.',
     visibility: 'both',
+    storageValue: 'Sarees',
+    businessKey: 'sarees',
+    displayLabel: 'Sarees',
     defaultStorage: {
-      category: 'Three Piece Set',
-      masterCategory: 'Three Piece Set',
-      subCategory: 'Kurta Pant Dupatta',
+      category: 'Sarees',
+      masterCategory: 'Sarees',
+      subCategory: 'Banarasi',
     },
   },
 ];
@@ -117,6 +120,23 @@ export const HEADER_PRODUCT_CATEGORIES: BusinessCategoryConfig[] = [
  */
 export const SHOP_FILTER_PRODUCT_CATEGORIES: BusinessCategoryConfig[] = [
   ...HEADER_PRODUCT_CATEGORIES,
+  {
+    key: 'salwar-suits',
+    label: 'Salwar Suits',
+    slug: 'salwar-suits',
+    tagline: 'Three-piece sets, kurta sets & festive coords',
+    color: '#DED0B6',
+    description: 'Tailored and unstitched kurta-pant-dupatta sets, anarkali sets, and festive ensembles.',
+    visibility: 'shop-filter',
+    storageValue: 'Three Piece Set',
+    businessKey: 'salwar-suits',
+    displayLabel: 'Salwar Suits',
+    defaultStorage: {
+      category: 'Three Piece Set',
+      masterCategory: 'Three Piece Set',
+      subCategory: 'Kurta Pant Dupatta',
+    },
+  },
   {
     key: 'three-piece-sets',
     label: '3 PC Sets',
@@ -151,23 +171,6 @@ export const SHOP_FILTER_PRODUCT_CATEGORIES: BusinessCategoryConfig[] = [
       subCategory: 'Co-ords',
     },
   },
-  {
-    key: 'sarees',
-    label: 'Sarees',
-    slug: 'sarees',
-    tagline: 'Six yards of timeless elegance & heritage weaves',
-    color: '#C9A267',
-    description: 'Banarasi, Kanjivaram, and handloom silks.',
-    visibility: 'shop-filter',
-    storageValue: 'Sarees',
-    businessKey: 'sarees',
-    displayLabel: 'Sarees',
-    defaultStorage: {
-      category: 'Sarees',
-      masterCategory: 'Sarees',
-      subCategory: 'Banarasi',
-    },
-  },
 ];
 
 /** Alias for backward compatibility with existing components */
@@ -198,6 +201,11 @@ BUSINESS_CATEGORY_MAP.set('three-piece-set', threePiece);
 // Aliases for Sarees
 const sareesCat = ALL_BUSINESS_CATEGORIES.find(c => c.key === 'sarees')!;
 BUSINESS_CATEGORY_MAP.set('saree', sareesCat);
+
+// Aliases for Salwar Suits
+const salwarSuitsCat = ALL_BUSINESS_CATEGORIES.find(c => c.key === 'salwar-suits')!;
+BUSINESS_CATEGORY_MAP.set('salwar-suit', salwarSuitsCat);
+BUSINESS_CATEGORY_MAP.set('salwar', salwarSuitsCat);
 
 /**
  * HIGH-CONFIDENCE MATCHING RULES
