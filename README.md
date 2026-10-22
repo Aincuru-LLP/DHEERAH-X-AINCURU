@@ -2,13 +2,13 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Tresor Couture
+# Dheerah
 
-Storefront and back office for a Hyderabad atelier selling hand-woven Indian
+Storefront and back office for a Dheerah selling hand-woven Indian
 designer textiles — fabrics, laces, sarees, lehenga cholis, anarkalis and
 western wear — shipped across India.
 
-**Live:** [tresorcouture.in](https://tresorcouture.in)
+**Live:** [dheerah.in](https://dheerah.com)
 
 Beyond the catalogue and checkout, it runs the parts of the business that
 usually live in a WhatsApp thread: **returns & refunds**, **per-order live
@@ -82,7 +82,7 @@ npm run emulators
 # terminal 2 — seed users, catalogue, coupons and orders
 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
-GCLOUD_PROJECT=demo-tresor \
+GCLOUD_PROJECT=demo-dheerah \
   npm run seed:emulator:full
 
 # terminal 2 — build against the emulators, then serve

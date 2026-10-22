@@ -1,51 +1,51 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { useRouter } from '../context/RouterContext';
+import { Link } from '../context/RouterContext';
 
 /**
  * Home Hero Section matching Figma Design
- * (Desktop & Mobile Figma frames: 2107-6466 / 2126-10432)
+ * Features responsive hero imagery with real, accessible "Explore the Collection →" CTA.
  */
 const Hero: React.FC = () => {
-  const { navigate } = useRouter();
-
   return (
     <section className="relative pt-[64px] sm:pt-[72px] md:pt-[88px] bg-white overflow-hidden">
       {/* ============================================================ */}
       {/* MOBILE HERO SECTION (< md)                                   */}
-      {/* Exact match to Figma Mobile Hero (Frame 306 / Node 2126-10454) */}
-      {/* Yellow-dress model with complete head, face, outfit & CTA    */}
+      {/* Portrait hero frame with clean image & accessible CTA button */}
       {/* ============================================================ */}
       <motion.div
         initial={{ opacity: 0, scale: 1.03 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-        className="md:hidden relative w-full aspect-[393/656] overflow-hidden bg-[#FAF9F5]"
+        className="md:hidden relative w-full aspect-[393/656] sm:aspect-[2/3] overflow-hidden bg-[#FAF9F5]"
       >
         <img
           src="/figma-assets/mobile-home-hero-frame.png"
           alt="Evergreen Cotton Gowns - Dheerah"
           loading="eager"
           fetchPriority="high"
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-cover object-center pointer-events-none select-none"
         />
 
-        {/* Interactive clickable hotspot matching 'Explore the Collection →' pill */}
-        <motion.button
-          whileHover={{ scale: 1.025 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => navigate({ name: 'shop' })}
-          className="absolute left-[12%] top-[76.2%] w-[49%] h-[8.4%] rounded-full cursor-pointer hover:bg-black/5 active:bg-black/10 focus:outline-none focus:ring-2 focus:ring-[#C47457] transition-shadow"
-          aria-label="Explore the Collection"
+        {/* Real interactive "Explore the Collection →" CTA Link */}
+        <Link
+          to="/shop"
+          className="hero-cta group absolute left-1/2 -translate-x-1/2 bottom-[8.5%] z-10 inline-flex items-center justify-center gap-2.5 bg-[#FAF7EE] hover:bg-[#F3EFE4] active:bg-[#EBE5D6] text-[#0F1A12] font-sans font-medium text-[13px] xs:text-[14px] sm:text-[15px] px-6 xs:px-7 sm:px-8 py-3 rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.10)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.16)] active:scale-[0.98] transition-all duration-200 cursor-pointer pointer-events-auto min-h-[44px] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1A12] focus-visible:ring-offset-2 select-none"
+          aria-label="Explore the collection and shop all products"
         >
-          <span className="sr-only">Explore the Collection</span>
-        </motion.button>
+          <span>Explore the Collection</span>
+          <span
+            aria-hidden="true"
+            className="inline-block transition-transform duration-200 group-hover:translate-x-1"
+          >
+            →
+          </span>
+        </Link>
       </motion.div>
 
       {/* ============================================================ */}
       {/* DESKTOP HERO SECTION (>= md)                                 */}
-      {/* Exact match to user's uploaded reference image (Frame 296)   */}
-      {/* Full width edge-to-edge on left and right side               */}
+      {/* Wide hero layout with heading on left and model on right     */}
       {/* ============================================================ */}
       <motion.div
         initial={{ opacity: 0, scale: 1.02 }}
@@ -58,22 +58,27 @@ const Hero: React.FC = () => {
           alt="Evergreen Cotton Gowns - Dheerah"
           loading="eager"
           fetchPriority="high"
-          className="w-full h-auto block"
+          className="w-full h-auto block pointer-events-none select-none"
         />
 
-        {/* Interactive clickable hotspot matching 'Explore the Collection →' pill */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => navigate({ name: 'shop' })}
-          className="absolute left-[38.4%] top-[80.0%] w-[23.2%] h-[5.4%] rounded-full cursor-pointer hover:bg-black/5 active:bg-black/10 focus:outline-none focus:ring-2 focus:ring-[#C47457] transition-shadow"
-          aria-label="Explore the Collection"
+        {/* Real interactive "Explore the Collection →" CTA Link */}
+        <Link
+          to="/shop"
+          className="hero-cta group absolute left-[10.2%] top-[39.4%] z-10 inline-flex items-center justify-center gap-2.5 lg:gap-3 bg-[#FAF7EE] hover:bg-[#F3EFE4] active:bg-[#EBE5D6] text-[#0F1A12] font-sans font-medium text-[13px] md:text-[14px] lg:text-[17px] xl:text-[20px] 2xl:text-[23px] px-5 md:px-6 lg:px-8 xl:px-9 2xl:px-10 py-2 md:py-2.5 lg:py-3.5 xl:py-4 rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.14)] active:scale-[0.98] transition-all duration-200 cursor-pointer pointer-events-auto min-h-[44px] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1A12] focus-visible:ring-offset-2 select-none"
+          aria-label="Explore the collection and shop all products"
         >
-          <span className="sr-only">Explore the Collection</span>
-        </motion.button>
+          <span>Explore the Collection</span>
+          <span
+            aria-hidden="true"
+            className="inline-block transition-transform duration-200 group-hover:translate-x-1"
+          >
+            →
+          </span>
+        </Link>
       </motion.div>
     </section>
   );
 };
 
 export default Hero;
+

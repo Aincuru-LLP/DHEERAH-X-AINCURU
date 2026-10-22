@@ -77,22 +77,6 @@ export const HEADER_PRODUCT_CATEGORIES: BusinessCategoryConfig[] = [
     },
   },
   {
-    key: 'raw-silk',
-    label: 'Raw Silk',
-    slug: 'raw-silk',
-    tagline: 'Lustrous, natural slubbed pure silks',
-    color: '#C9A267',
-    description: 'Textured pure raw silk, mulberry greige, and handloom silk yardage.',
-    visibility: 'both',
-    defaultStorage: {
-      category: 'Fabrics',
-      masterCategory: 'Fabrics',
-      materialType: 'Silk',
-      subCategory: 'Silk',
-      tags: ['Raw Silk', 'Pure Silk'],
-    },
-  },
-  {
     key: 'sarees',
     label: 'Sarees',
     slug: 'sarees',
@@ -109,6 +93,23 @@ export const HEADER_PRODUCT_CATEGORIES: BusinessCategoryConfig[] = [
       subCategory: 'Banarasi',
     },
   },
+  {
+    key: 'salwar-suits',
+    label: 'Salwar Suits',
+    slug: 'salwar-suits',
+    tagline: 'Three-piece sets, kurta sets & festive coords',
+    color: '#DED0B6',
+    description: 'Tailored and unstitched kurta-pant-dupatta sets, anarkali sets, and festive ensembles.',
+    visibility: 'both',
+    storageValue: 'Three Piece Set',
+    businessKey: 'salwar-suits',
+    displayLabel: 'Salwar Suits',
+    defaultStorage: {
+      category: 'Three Piece Set',
+      masterCategory: 'Three Piece Set',
+      subCategory: 'Kurta Pant Dupatta',
+    },
+  },
 ];
 
 /**
@@ -121,20 +122,19 @@ export const HEADER_PRODUCT_CATEGORIES: BusinessCategoryConfig[] = [
 export const SHOP_FILTER_PRODUCT_CATEGORIES: BusinessCategoryConfig[] = [
   ...HEADER_PRODUCT_CATEGORIES,
   {
-    key: 'salwar-suits',
-    label: 'Salwar Suits',
-    slug: 'salwar-suits',
-    tagline: 'Three-piece sets, kurta sets & festive coords',
-    color: '#DED0B6',
-    description: 'Tailored and unstitched kurta-pant-dupatta sets, anarkali sets, and festive ensembles.',
+    key: 'raw-silk',
+    label: 'Raw Silk',
+    slug: 'raw-silk',
+    tagline: 'Lustrous, natural slubbed pure silks',
+    color: '#C9A267',
+    description: 'Textured pure raw silk, mulberry greige, and handloom silk yardage.',
     visibility: 'shop-filter',
-    storageValue: 'Three Piece Set',
-    businessKey: 'salwar-suits',
-    displayLabel: 'Salwar Suits',
     defaultStorage: {
-      category: 'Three Piece Set',
-      masterCategory: 'Three Piece Set',
-      subCategory: 'Kurta Pant Dupatta',
+      category: 'Fabrics',
+      masterCategory: 'Fabrics',
+      materialType: 'Silk',
+      subCategory: 'Silk',
+      tags: ['Raw Silk', 'Pure Silk'],
     },
   },
   {

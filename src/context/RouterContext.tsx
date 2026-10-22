@@ -234,3 +234,39 @@ export const useRouter = () => {
   if (!ctx) throw new Error('useRouter must be used inside RouterProvider');
   return ctx;
 };
+
+export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+  to: Route | string;
+  children?: React.ReactNode;
+}
+
+export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
+  ({ to, onClick, children, ...props }, ref) => {
+    const { navigate, hrefFor } = useRouter();
+    const routeObj: Route = typeof to === 'string' ? parsePath(to) : to;
+    const href = hrefFor(routeObj);
+
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+      onClick?.(e);
+      // Only handle un-modified primary (left) clicks
+      if (
+        !e.defaultPrevented &&
+        e.button === 0 &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.shiftKey
+      ) {
+        e.preventDefault();
+        navigate(routeObj);
+      }
+    };
+
+    return (
+      <a ref={ref} href={href} onClick={handleClick} {...props}>
+        {children}
+      </a>
+    );
+  }
+);
+Link.displayName = 'Link';

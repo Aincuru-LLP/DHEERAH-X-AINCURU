@@ -44,7 +44,7 @@ const navFor = (): NavEntry[] => {
     key: c.key,
     label: c.label,
     config: c,
-    tone: c.key === 'raw-silk' ? 'premium' : 'default',
+    tone: 'default',
   }));
 };
 
@@ -373,18 +373,27 @@ const Navbar: React.FC = () => {
 
           <nav className="flex-1 overflow-y-auto px-4 py-3 space-y-1" aria-label="Mobile primary navigation">
             <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#CC9E00] px-3 py-1">Collections</p>
-            {NAV.map(n => (
-              <div key={n.key} className="border-b border-[#E8D7BD]/40 last:border-b-0">
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => goShop(n.key)}
-                    className="text-[13px] font-bold tracking-wide uppercase py-3 px-3 text-[#050505] hover:text-[#C7042B] transition-colors w-full text-left"
-                  >
-                    {n.label}
-                  </button>
+            {NAV.map(n => {
+              const isActive =
+                activeCat === n.key ||
+                activeCat === n.label ||
+                (Boolean(activeCat) && activeCat?.toLowerCase() === n.key.toLowerCase()) ||
+                (Boolean(activeCat) && activeCat?.toLowerCase() === n.label.toLowerCase());
+              return (
+                <div key={n.key} className="border-b border-[#E8D7BD]/40 last:border-b-0">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => goShop(n.key)}
+                      className={`text-[13px] font-bold tracking-wide uppercase py-3 px-3 transition-colors w-full text-left ${
+                        isActive ? 'text-[#C7042B] font-extrabold bg-[#F1E6D2]/40' : 'text-[#050505] hover:text-[#C7042B]'
+                      }`}
+                    >
+                      {n.label}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="pt-4 mt-4 border-t border-[#E8D7BD]">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#CC9E00] px-3 py-1">Client Services</p>
@@ -454,7 +463,11 @@ const Navbar: React.FC = () => {
             {/* Desktop Navigation Links */}
             <nav className="hidden lg:flex items-stretch gap-1 xl:gap-2 h-full min-w-0 flex-shrink ml-4" aria-label="Primary">
               {NAV.map(n => {
-                const isActive = activeCat === n.key || activeCat === n.label;
+                const isActive =
+                  activeCat === n.key ||
+                  activeCat === n.label ||
+                  (Boolean(activeCat) && activeCat?.toLowerCase() === n.key.toLowerCase()) ||
+                  (Boolean(activeCat) && activeCat?.toLowerCase() === n.label.toLowerCase());
                 const onClick = () => goShop(n.key);
                 return (
                   <div
