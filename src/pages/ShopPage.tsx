@@ -76,6 +76,10 @@ const CATEGORY_HERO_BANNERS: Record<string, { src: string; alt: string }> = {
     src: '/figma-assets/banners/salwar-suits-hero.png',
     alt: 'Salwar Suits Collection - Dheerah',
   },
+  'sarees': {
+    src: '/figma-assets/banners/sarees-hero.png',
+    alt: 'Sarees Collection - Dheerah',
+  },
   'all-fabrics': {
     src: '/figma-assets/banners/all-fabrics-hero.png',
     alt: 'All Fabrics - Dheerah',
@@ -89,6 +93,7 @@ function getCategoryHeroBanner(categoryKey?: string | null) {
   if (key === 'kalamkari') return CATEGORY_HERO_BANNERS['kalamkari'];
   if (key === 'raw-silk' || key === 'raw-silks') return CATEGORY_HERO_BANNERS['raw-silk'];
   if (key === 'salwar-suits' || key === 'salwar-suit') return CATEGORY_HERO_BANNERS['salwar-suits'];
+  if (key === 'sarees' || key === 'saree') return CATEGORY_HERO_BANNERS['sarees'];
   if (key === 'all-fabrics' || key === 'fabrics' || key === 'fabric' || key === 'all') return CATEGORY_HERO_BANNERS['all-fabrics'];
   return CATEGORY_HERO_BANNERS[key] ?? null;
 }
